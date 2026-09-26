@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Nirmal Kirola — backend engineer at Morphic. The portfolio as a terminal session at nirmal@nainital.">
+<meta property="og:title" content="Nirmal Kirola — portfolio (terminal)">
+<meta property="og:description" content="Backend engineer at Morphic: billing platform, generation pipeline behind 30+ models, elastic video rendering — as a zsh scrollback.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nirmalkirola.github.io/v2/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230E1512'/><text x='32' y='44' font-family='monospace' font-size='34' font-weight='700' text-anchor='middle' fill='%2341A98F'>N</text></svg>">
+<style>html,body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>nirmal@nainital</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ground: #090D0C;
+    --screen: #0E1512;
+    --chrome: #131B18;
+    --border: #23302B;
+    --fg: #D6E2DB;
+    --dim: #5F7169;
+    --faint: #43524B;
+    --green: #41A98F;
+    --amber: #D9A05B;
+    --blue: #6FA8DC;
+    --red: #C96A5D;
+    --sel: #41A98F44;
+  }
+  ::selection { background: var(--sel); }
+
+  body {
+    background: var(--ground);
+    color: var(--fg);
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+    font-size: 14px;
+    line-height: 1.75;
+    padding-inline: 16px;
+  }
+
+  .term {
+    max-width: 900px;
+    margin: 0 auto;
+    padding-block: 40px 56px;
+  }
+
+  /* ---- window chrome ---- */
+  .win {
+    background: var(--screen);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 24px 70px -30px #000, 0 0 0 1px #00000066;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--chrome);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #B0574C; }
+  .dot.y { background: #B08C4C; }
+  .dot.g { background: #4C8F72; }
+  .bar-title {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .scroll { padding: 26px 26px 30px; position: relative; }
+
+  /* scanlines */
+  .win::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent 0 2px, #00000018 2px 3px);
+    border-radius: inherit;
+  }
+
+  /* ---- prompt & blocks ---- */
+  .block { margin: 0 0 26px; }
+  .block:last-child { margin-bottom: 0; }
+  .prompt { white-space: nowrap; overflow-x: auto; }
+  .prompt .u { color: var(--green); font-weight: 500; }
+  .prompt .p { color: var(--dim); }
+  .prompt .cmd-text { color: var(--fg); font-weight: 500; }
+  .prompt .arg { color: var(--blue); }
+
+  .out { margin-top: 6px; }
+  .out p { margin: 0; }
+  .comment { color: var(--dim); }
+  .k { color: var(--amber); }
+  .b { color: var(--blue); }
+  .g { color: var(--green); }
+  .hr { color: var(--faint); user-select: none; }
+
+  a { color: var(--blue); text-decoration: none; }
+  a:hover, a:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible { outline: 1px solid var(--green); outline-offset: 2px; }
+
+  button.copy {
+    font: inherit;
+    color: var(--green);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+  button.copy:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .copied { color: var(--amber); }
+
+  .ridge-ascii {
+    color: var(--green);
+    opacity: 0.75;
+    line-height: 1.25;
+    margin: 12px 0 4px;
+    overflow-x: auto;
+    font-size: 13px;
+  }
+  pre { margin: 0; font: inherit; }
+
+  /* metrics table */
+  .tbl { display: grid; grid-template-columns: max-content max-content 1fr; column-gap: 28px; row-gap: 2px; }
+  .tbl .name { color: var(--fg); }
+  .tbl .val { color: var(--amber); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tbl .note { color: var(--dim); }
+
+  /* systems entries */
+  .sys-h { color: var(--green); font-weight: 700; margin: 0 0 4px; }
+  .entry { margin: 10px 0 0; }
+  .entry .name { color: var(--fg); font-weight: 700; }
+  .entry .tag { color: var(--amber); }
+  .entry p.desc { color: var(--dim); margin: 0; max-width: 78ch; }
+
+  /* history */
+  .hist { display: grid; grid-template-columns: max-content 1fr; column-gap: 24px; row-gap: 12px; }
+  .hist .when { color: var(--faint); white-space: nowrap; }
+  .hist .role b { color: var(--fg); }
+  .hist .role .at { color: var(--dim); }
+  .hist .role p { color: var(--dim); margin: 2px 0 0; max-width: 72ch; }
+  .badge { color: var(--green); }
+  .badge::before {
+    content: "";
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    margin: 0 5px 0 8px;
+    vertical-align: 1px;
+  }
+
+  /* stack.conf */
+  .conf .sect { color: var(--blue); }
+  .conf .vals { color: var(--fg); }
+
+  .cursor {
+    display: inline-block;
+    width: 8px; height: 17px;
+    background: var(--green);
+    vertical-align: -3px;
+    margin-left: 2px;
+  }
+
+  .foot {
+    margin-top: 18px;
+    text-align: center;
+    color: var(--faint);
+    font-size: 12px;
+  }
+
+  @media (max-width: 640px) {
+    body { font-size: 13px; }
+    .scroll { padding: 18px 14px 22px; }
+    .tbl { column-gap: 14px; }
+    .tbl .note { grid-column: 2 / 4; }
+    .tbl .note-wrap { display: contents; }
+    .hist { grid-template-columns: 1fr; row-gap: 2px; }
+    .hist .role { margin-bottom: 12px; }
+  }
+
+  .ridge-stack { position: relative; }
+  .ridge-stack pre { line-height: 1.05; overflow: hidden; }
+  .ridge-gutter { position: absolute; left: 0; top: 0; color: var(--faint); }
+  .ridge-far-pre { position: absolute; left: 6ch; right: 0; top: 0; color: var(--faint); }
+  .ridge-near-pre { position: relative; margin-left: 6ch; color: var(--green); opacity: 0.85; }
+  .ridge-axis { color: var(--faint); }
+
+  /* ---- motion ---- */
+  @keyframes typing { from { width: 0; } }
+  @keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes blink { 50% { opacity: 0; } }
+  @keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  @keyframes ridge-glow { 0%, 100% { opacity: 0.75; } 50% { opacity: 0.4; } }
+  @keyframes ping { 0% { box-shadow: 0 0 0 0 currentColor; } 75%, 100% { box-shadow: 0 0 0 7px transparent; } }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* boot sequence: the first command types itself, its output prints in */
+    .hero .cmd-wrap {
+      display: inline-block;
+      overflow: hidden;
+      white-space: nowrap;
+      vertical-align: bottom;
+      width: 6ch;
+      animation: typing 0.55s steps(6) 0.25s both;
+    }
+    .hero .out > * { animation: fade-up 0.4s ease both; }
+    .hero .out > *:nth-child(1) { animation-delay: 0.9s; }
+    .hero .out > *:nth-child(2) { animation-delay: 1.0s; }
+    .hero .out > *:nth-child(3) { animation-delay: 1.15s; }
+    .hero .out > *:nth-child(4) { animation-delay: 1.3s; }
+    .hero .out > *:nth-child(5) { animation-delay: 1.45s; }
+    .hero .out > *:nth-child(6) { animation-delay: 1.6s; }
+
+    .cursor { animation: blink 1.1s steps(1) infinite; }
+    .ridge-ascii { animation: ridge-glow 7s ease-in-out infinite; }
+    .badge::before { animation: ping 1.7s cubic-bezier(0.2, 0.7, 0.3, 1) infinite; }
+
+    .tbl .val { animation: breathe 3.6s ease-in-out infinite; }
+    .tbl .val:nth-of-type(5) { animation-delay: 0.9s; animation-duration: 4.1s; }
+    .tbl .val:nth-of-type(8) { animation-delay: 1.6s; animation-duration: 4.5s; }
+    .tbl .val:nth-of-type(11) { animation-delay: 2.2s; animation-duration: 3.8s; }
+
+    /* scroll reveals: script hides only below-fold blocks */
+    .pre .out { opacity: 0; transform: translateY(12px); }
+    .pre.in .out { opacity: 1; transform: none; transition: opacity 0.5s ease 0.15s, transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) 0.15s; }
+  }
+</style>
+</head>
+<body>
+
+
+<div class="term">
+  <div class="win">
+    <div class="bar" aria-hidden="true">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="bar-title">nirmal@nainital: ~/portfolio — zsh</span>
+      <span style="width:49px"></span>
+    </div>
+    <div class="scroll">
+
+      <div class="block hero">
+        <p class="prompt"><span class="u">nirmal@nainital</span> <span class="p">~/portfolio %</span> <span class="cmd-wrap"><span class="cmd-text">whoami</span></span></p>
+        <div class="out">
+          <p><b>Nirmal Kirola</b> — backend engineer</p>
+          <p><span class="g">Morphic</span> <span class="comment">(AI creative studio)</span> · Nainital, Uttarakhand, India</p>
+          <div class="ridge-ascii ridge-stack" aria-hidden="true"><pre class="ridge-gutter">   8k┤
+   6k┤
+   4k┤
+   2k┤</pre><pre class="ridge-far-pre" id="ridge-far">                                                                
+                          ▁▂▃▃▃▂                                
+▆▆▆▅▃                  ▁▃▆███████▇▆▆▆▇▇▇▇▆▄▂       ▂▃▄▅▅▄▃▂▂▂▃▄▅
+██████▆▃▂▂▂▂▃▄▅▅▅▅▄▄▄▅▆██████████████████████▆▅▄▅▆██████████████</pre><pre class="ridge-near-pre" id="ridge">▄▆▅▃                                         ▃▆▆▃               
+█████▆▅▆▆▅▂               ▃▅▄              ▁▇████▇▄▁▁▁▂▂      ▂█
+███████████▅      ▂▄▅▄▄▄▅█████▃          ▁▄██████████████▅▃▁▂▅██
+████████████▇▂▂▂▂▆█████████████▆▂▂▂▃▆███████████████████████████</pre><pre class="ridge-axis" id="ridge-axis">    0└────────┴───────────────┴───────────────┴───────────────┴───────
+              11:46           11:54           12:02           12:10</pre></div>
+          <p><span class="comment"># links:</span> <a href="https://github.com/nirmalkirola" target="_blank" rel="noopener">github.com/nirmalkirola</a> · <a href="https://www.linkedin.com/in/nirmal-kirola/" target="_blank" rel="noopener">linkedin.com/in/nirmal-kirola</a></p>
+          <p><span class="comment"># email:</span> nirmalkirola@gmail.com <button class="copy" id="copy-email" type="button">[copy]</button><span class="copied" id="copy-note" hidden> ok</span></p>
+        </div>
+      </div>
+
+      <div class="block">
+        <p class="prompt"><span class="u">nirmal@nainital</span> <span class="p">~/portfolio %</span> <span class="cmd-text">metrics <span class="arg">--prod</span></span></p>
+        <div class="out">
+          <div class="tbl">
+            <span class="name">models_integrated</span><span class="val">30+</span><span class="note">image · video · audio</span>
+            <span class="name">render_speedup</span><span class="val">~10x</span><span class="note">elastic Cloud Run jobs</span>
+            <span class="name">batch_cost</span><span class="val">-50%</span><span class="note">OpenAI Batch lane</span>
+            <span class="name">charge_p95</span><span class="val">58s→3s</span><span class="note">batched credit settlement</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <p class="prompt"><span class="u">nirmal@nainital</span> <span class="p">~/portfolio %</span> <span class="cmd-text">cat <span class="arg">systems/morphic.md</span></span></p>
+        <div class="out">
+          <p class="sys-h"># Morphic · AI creative studio · 2024 — now</p>
+          <div class="entry">
+            <p><span class="name">billing-and-credits</span> <span class="tag">[stripe · credits]</span></p>
+            <p class="desc">Credit system with usage tracking, packs, and auto-recharge, plus the full Stripe
+            subscription stack: seat billing, pause/resume, upgrades, coupons, automatic tax, dunning,
+            enterprise plan catalogs.</p>
+          </div>
+          <div class="entry">
+            <p><span class="name">generation-pipeline</span> <span class="tag">[30+ models]</span></p>
+            <p class="desc">Async-task orchestration with timeout and cancellation semantics, webhook-driven provider
+            callbacks, a rules-based routing engine with dynamic pricing, provider fallback chains, and a LoRA
+            training platform with versioning across architectures.</p>
+          </div>
+          <div class="entry">
+            <p><span class="name">elastic-video-rendering</span> <span class="tag">[~10x faster]</span></p>
+            <p class="desc">Moved heavy renders off shared worker pools onto per-task Cloud Run jobs with parallel
+            chunked rendering, so long exports finish in minutes instead of timing out.</p>
+          </div>
+          <div class="entry">
+            <p><span class="name">batch-generation-lane</span> <span class="tag">[-50% cost]</span></p>
+            <p class="desc">Provider-agnostic batch lane over the OpenAI Batch API for bulk workflow runs: split
+            pricing with premium refunds on delivery, and queued/wake turns so the copilot keeps working while
+            batches complete.</p>
+          </div>
+          <div class="entry">
+            <p><span class="name">batched-credit-settlement</span> <span class="tag">[p95 58s→3s]</span></p>
+            <p class="desc">Replaced serial per-org credit locks with batched settlement, diagnosed from production
+            traces and validated at 10,000-task load.</p>
+          </div>
+          <div class="entry">
+            <p><span class="name">copilot-subagent-architecture</span> <span class="tag">[in production]</span></p>
+            <p class="desc">Re-architected the AI copilot&rsquo;s generation tools into sub-agents with model-specific
+            tools per modality — the design the copilot runs on today.</p>
+          </div>
+          <p class="desc" style="margin-top:10px"><span class="comment"># also shipped:</span> <span class="comment">org multi-tenancy migration · public API platform ·
+          realtime comments (threads, mentions, reactions, digests) · bulk-download pipeline</span></p>
+        </div>
+      </div>
+
+      <div class="block">
+        <p class="prompt"><span class="u">nirmal@nainital</span> <span class="p">~/portfolio %</span> <span class="cmd-text">cat <span class="arg">systems/planify.md</span></span></p>
+        <div class="out">
+          <p class="sys-h"># Planify Capital · fintech · 2023 — 2024</p>
+          <div class="entry">
+            <p><span class="name">payments-and-subscriptions</span> <span class="tag">[3 payment rails]</span></p>
+            <p class="desc">Stock purchases via Billdesk, Paytm, and ICICI API Banking, a subscription module for
+            premium content, direct payment links for channel partners, and admin dashboards.</p>
+          </div>
+          <div class="entry">
+            <p><span class="name">buy-sell-trading-platform</span> <span class="tag">[flagship]</span></p>
+            <p class="desc">The core platform for bids on unlisted stock: bid management and fulfillment, portfolio,
+            tradebook and sharebook, investor wallets with withdrawals and cashbacks, partner incentives.</p>
+          </div>
+          <div class="entry">
+            <p><span class="name">kyc-and-investor-services</span> <span class="tag">[19 KYC types]</span></p>
+            <p class="desc">Complex KYC workflows across 19 verification types, research report sections, a daily
+            stock and news notification service, and embeddable stock-performance widgets.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <p class="prompt"><span class="u">nirmal@nainital</span> <span class="p">~/portfolio %</span> <span class="cmd-text">cat <span class="arg">systems/lenskart.md</span></span></p>
+        <div class="out">
+          <p class="sys-h"># Lenskart · e-commerce ML · 2021 — 2023</p>
+          <div class="entry">
+            <p><span class="name">personalized-recommendations</span> <span class="tag">[realtime]</span></p>
+            <p class="desc">Product recommendations, re-ranked category pages, and cold-start handling using implicit
+            matrix factorization, Prod2Vec/Meta-Prod2Vec, and image similarity, served in real time.</p>
+          </div>
+          <div class="entry">
+            <p><span class="name">eyewear-computer-vision</span> <span class="tag">[selfie→fit]</span></p>
+            <p class="desc">Face-width and frame-size prediction with Face Mesh and XGBoost, and pupil-distance
+            measurement for bifocals using LCNN edge detection, so a photo replaces an in-store fitting.</p>
+          </div>
+          <div class="entry">
+            <p><span class="name">search-by-look</span> <span class="tag">[visual search]</span></p>
+            <p class="desc">Upload a photo of someone wearing frames and find them: object detection, embeddings, and
+            image similarity, with multisearch refinement by brand, color, material, and size.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <p class="prompt"><span class="u">nirmal@nainital</span> <span class="p">~/portfolio %</span> <span class="cmd-text">history <span class="arg">--work</span></span></p>
+        <div class="out">
+          <div class="hist">
+            <span class="when">2024 — now</span>
+            <div class="role"><b>Software Engineer</b> <span class="at">· Morphic</span><span class="badge">current</span>
+              <p>Backend for an AI-native creative studio: billing, generation infrastructure, multi-tenancy, and the AI copilot.</p></div>
+            <span class="when">2023 — 2026</span>
+            <div class="role"><b>Backend Developer</b> <span class="at">· UIX Labs</span>
+              <p>Software consultancy; deployed full-time to client engineering teams.</p></div>
+            <span class="when">2023 — 2024</span>
+            <div class="role"><b>Software Engineer</b> <span class="at">· Planify Capital</span>
+              <p>Led the backend team for a fintech platform: payments, subscriptions, KYC, portfolio, and the buy-sell trading platform.</p></div>
+            <span class="when">2021 — 2023</span>
+            <div class="role"><b>Data Scientist I / ML Engineer</b> <span class="at">· Lenskart</span>
+              <p>Recommendation systems and computer vision for eyewear fitting and visual search.</p></div>
+            <span class="when">2021</span>
+            <div class="role"><b>Associate Developer</b> <span class="at">· Cogitate Technology Solutions</span>
+              <p>Insurance digitalization projects in .NET, across frontend, backend, and chatbots.</p></div>
+            <span class="when">2020 — 2021</span>
+            <div class="role"><b>Associate R&amp;D Engineer, Deep Learning</b> <span class="at">· Sonatic AI</span>
+              <p>NLP for a hiring platform: LSTM search ranking, email intent recognition, personality-trait models.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <p class="prompt"><span class="u">nirmal@nainital</span> <span class="p">~/portfolio %</span> <span class="cmd-text">cat <span class="arg">stack.conf</span></span></p>
+        <div class="out conf">
+          <p><span class="sect">[backend]</span> <span class="vals">typescript · node · python · postgresql · redis · typeorm · stripe</span></p>
+          <p><span class="sect">[infra]</span> <span class="vals">gcp · cloud-run · pubsub · gcs · temporal · ffmpeg · ci/cd</span></p>
+          <p><span class="sect">[ai+data]</span> <span class="vals">llm-agents · generative-media-apis · recommenders · computer-vision · xgboost</span></p>
+        </div>
+      </div>
+
+      <div class="block">
+        <p class="prompt"><span class="u">nirmal@nainital</span> <span class="p">~/portfolio %</span> <span class="cmd-text">cat <span class="arg">education.txt</span></span></p>
+        <div class="out">
+          <p><span class="k">2017 — 2021</span> B.Tech, Computer Science · Birla Institute of Applied Sciences</p>
+          <p class="comment"># paper: "Intelligent Data-Analytic Approach for Restaurant Recommendation"</p>
+        </div>
+      </div>
+
+      <div class="block">
+        <p class="prompt"><span class="u">nirmal@nainital</span> <span class="p">~/portfolio %</span> <span class="cmd-text">echo <span class="arg">$MOTTO</span></span></p>
+        <div class="out">
+          <p>Backend by day, mountains on weekends.</p>
+        </div>
+      </div>
+
+      <div class="block">
+        <p class="prompt"><span class="u">nirmal@nainital</span> <span class="p">~/portfolio %</span> <span class="cursor" aria-hidden="true"></span></p>
+      </div>
+
+    </div>
+  </div>
+  <p class="foot">last login: from the Himalayas · nirmalkirola@gmail.com</p>
+</div>
+
+<script>
+  const btn = document.getElementById('copy-email');
+  const note = document.getElementById('copy-note');
+  btn.addEventListener('click', () => {
+    const done = () => {
+      note.hidden = false;
+      setTimeout(() => { note.hidden = true; }, 1800);
+    };
+    try {
+      navigator.clipboard.writeText('nirmalkirola@gmail.com').then(done).catch(() => {});
+    } catch (e) { /* copy is a convenience */ }
+  });
+
+
+  /* Live traffic plot: two block-glyph series (today + baseline) over periodic
+     heightmaps, with an x-axis whose clock labels scroll along -- a seamless
+     loop. The frame in the markup is the resting state without script. */
+  try {
+    const motionOkR = matchMedia('(prefers-reduced-motion: no-preference)').matches;
+    const near = document.getElementById('ridge');
+    const far = document.getElementById('ridge-far');
+    const axis = document.getElementById('ridge-axis');
+    if (motionOkR && near && far && axis) {
+      const ROWS = 4;
+      const PARTS = ' ▁▂▃▄▅▆▇';
+      let cols = 0, hNear = [], hFar = [];
+
+      const measure = () => {
+        const probe = document.createElement('span');
+        probe.textContent = 'MMMMMMMMMM';
+        probe.style.cssText = 'visibility:hidden;position:absolute;font:inherit;';
+        near.parentElement.appendChild(probe);
+        const cw = probe.getBoundingClientRect().width / 10 || 8;
+        probe.remove();
+        cols = Math.max(32, Math.min(240, Math.floor(near.parentElement.clientWidth / cw) - 6));
+        const build = (base, a1, k1, p1, a2, k2, p2, a3, k3, p3) => {
+          const out = [];
+          for (let x = 0; x < cols; x++) {
+            const w = (x / cols) * Math.PI * 2;
+            let n = base + a1 * Math.sin(w * k1 + p1) + a2 * Math.sin(w * k2 + p2) + a3 * Math.sin(w * k3 + p3);
+            n = Math.max(0.04, Math.min(0.98, n));
+            out.push(1 + Math.round(n * (ROWS * 8 - 2)));
+          }
+          return out;
+        };
+        hNear = build(0.46, 0.30, 3, 0.4, 0.15, 7, 1.3, 0.20, 1, 2.1);
+        hFar = build(0.30, 0.18, 2, 1.9, 0.10, 5, 0.6, 0.12, 1, 4.0);
+      };
+
+      const render = (pre, hmap, t) => {
+        const lines = [];
+        for (let r = 0; r < ROWS; r++) {
+          const cap = (ROWS - r) * 8;
+          let line = '';
+          for (let x = 0; x < cols; x++) {
+            const h = hmap[(x + t) % cols];
+            if (h >= cap) { line += '█'; }
+            else {
+              const d = h - (cap - 8);
+              line += d > 0 ? PARTS[d] : ' ';
+            }
+          }
+          lines.push(line);
+        }
+        pre.textContent = lines.join('\n');
+      };
+
+      const renderAxis = (t) => {
+        let line = '    0└';
+        const lab = new Array(cols).fill(' ');
+        for (let x = 0; x < cols; x++) {
+          if ((x + t) % 16 === 8) {
+            line += '┴';
+            const mins = (11 * 60 + 42 + Math.round((x + t) / 2)) % 1440;
+            const hh = String(Math.floor(mins / 60)).padStart(2, '0');
+            const mm = String(mins % 60).padStart(2, '0');
+            const ts = hh + ':' + mm;
+            for (let i = 0; i < ts.length && x + i < cols; i++) { lab[x + i] = ts[i]; }
+          } else {
+            line += '─';
+          }
+        }
+        axis.textContent = line + '\n      ' + lab.join('').replace(/\s+$/, '');
+      };
+
+      measure();
+      let t = 0;
+      render(far, hFar, 0);
+      render(near, hNear, 0);
+      renderAxis(0);
+      setInterval(() => {
+        t += 1;
+        render(near, hNear, t % cols);
+        render(far, hFar, Math.floor(t / 2) % cols);
+        renderAxis(t);
+      }, 100);
+      addEventListener('resize', () => { measure(); render(far, hFar, t % cols); render(near, hNear, t % cols); renderAxis(t); });
+    }
+  } catch (e) {
+    /* the static plot stands */
+  }
+
+  /* Scroll reveals with a typewriter: only below-fold blocks are staged, and only
+     when motion is allowed and IntersectionObserver exists — the scrollback is
+     complete at rest without script. */
+  try {
+    const motionOk = matchMedia('(prefers-reduced-motion: no-preference)').matches;
+    if (motionOk && 'IntersectionObserver' in window) {
+      const typeInto = (el, full) => new Promise((resolve) => {
+        let i = 0;
+        const tick = () => {
+          i += 1;
+          el.textContent = full.slice(0, i);
+          if (i >= full.length) { resolve(); } else { setTimeout(tick, 16); }
+        };
+        tick();
+      });
+      const staged = new Map();
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((en) => {
+          if (!en.isIntersecting) { return; }
+          io.unobserve(en.target);
+          const cmd = en.target.querySelector('.cmd-text');
+          const st = staged.get(en.target);
+          const reveal = () => en.target.classList.add('in');
+          if (cmd && st) {
+            typeInto(cmd, st.text).then(() => {
+              cmd.innerHTML = st.html; /* restore arg coloring */
+              reveal();
+            });
+          } else {
+            reveal();
+          }
+        });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+
+      document.querySelectorAll('.block:not(.hero)').forEach((b) => {
+        if (b.getBoundingClientRect().top > innerHeight) {
+          const cmd = b.querySelector('.cmd-text');
+          if (cmd) {
+            staged.set(b, { text: cmd.textContent, html: cmd.innerHTML });
+            cmd.textContent = '';
+          }
+          b.classList.add('pre');
+          io.observe(b);
+        }
+      });
+    }
+  } catch (e) {
+    /* reveal is decorative; the scrollback stays visible without it */
+  }
+</script>
+
+</body>
+</html>
