@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Nirmal Kirola — backend engineer at Morphic. The career as a GitHub releases page.">
+<meta property="og:title" content="Nirmal Kirola — portfolio (releases)">
+<meta property="og:description" content="The career as semver changelogs — v5.0.0: The AI Studio Release.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nirmalkirola.github.io/release/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230D1117'/><text x='32' y='44' font-family='monospace' font-size='34' font-weight='700' text-anchor='middle' fill='%233FB950'>N</text></svg>">
+<style>html,body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>nirmal/releases</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0D1117;
+    --panel: #161B22;
+    --border: #30363D;
+    --fg: #C9D1D9;
+    --dim: #8B949E;
+    --faint: #484F58;
+    --green: #3FB950;
+    --blue: #58A6FF;
+    --amber: #D29922;
+  }
+  ::selection { background: #58A6FF33; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding-inline: 16px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding-block: 28px 56px; }
+  .mono { font-family: "JetBrains Mono", monospace; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover, a:focus-visible { text-decoration: underline; }
+  a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  .crumb { color: var(--dim); margin: 0 0 2px; }
+  .crumb b { color: var(--fg); font-weight: 600; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 20px; }
+
+  .release { display: flex; gap: 20px; }
+  .rail { flex: none; width: 16px; position: relative; }
+  .rail::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: -14px; width: 2px; background: var(--border); }
+  .release:last-of-type .rail::before { bottom: auto; height: 40px; }
+  .rail i {
+    position: absolute; left: 2px; top: 6px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--bg); border: 2px solid var(--faint);
+  }
+  .release.latest .rail i { border-color: var(--green); background: var(--green); }
+
+  .card {
+    flex: 1; min-width: 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px 14px;
+    margin-bottom: 18px;
+  }
+  .rhead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 2px; }
+  .rhead h2 { margin: 0; font-size: 19px; font-weight: 600; }
+  .tag {
+    font-size: 11px; font-weight: 600;
+    border-radius: 999px; padding: 1px 9px;
+  }
+  .tag.latest { color: var(--green); border: 1px solid var(--green); }
+  .tag.pre { color: var(--amber); border: 1px solid var(--amber); }
+  .rmeta { color: var(--dim); font-size: 12.5px; margin: 0 0 10px; }
+  .rmeta .mono { font-size: 11.5px; }
+  .avatar {
+    display: inline-grid; place-items: center;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #21614F; color: #C7EDE1;
+    font-size: 9px; font-weight: 700; vertical-align: -4px; margin-right: 4px;
+  }
+  .body h3 { font-size: 13px; margin: 12px 0 4px; color: var(--fg); }
+  .body h3.add { color: var(--green); }
+  .body h3.imp { color: var(--blue); }
+  .body h3.fix { color: var(--amber); }
+  .body ul { margin: 0; padding-left: 20px; color: var(--dim); }
+  .body li { margin: 3px 0; }
+  .body li b { color: var(--fg); font-weight: 500; }
+  .body p { color: var(--dim); margin: 8px 0 0; }
+
+  details.card summary {
+    list-style: none; cursor: pointer;
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  }
+  details.card summary::-webkit-details-marker { display: none; }
+  details.card summary h2 { margin: 0; font-size: 17px; font-weight: 600; }
+  details.card summary .rmeta { margin: 0; }
+  details.card summary .exp { margin-left: auto; color: var(--faint); font-size: 12px; }
+  details.card[open] summary .exp { display: none; }
+
+  footer { color: var(--faint); font-size: 13px; }
+  footer .mono { font-size: 12px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes ping { 0% { box-shadow: 0 0 0 0 #3FB950AA; } 75%, 100% { box-shadow: 0 0 0 8px transparent; } }
+    .release.latest .rail i { animation: ping 2s cubic-bezier(0.2, 0.7, 0.3, 1) infinite; }
+  }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <p class="crumb">nirmalkirola / <b>career</b></p>
+  <h1>Releases</h1>
+
+  <div class="release latest">
+    <div class="rail"><i></i></div>
+    <div class="card">
+      <div class="rhead"><h2>v5.0.0 — The AI Studio Release</h2><span class="tag latest">Latest</span></div>
+      <p class="rmeta"><span class="avatar">NK</span>nirmal released this Nov 2024 · still receiving commits · <span class="mono">morphic@main</span></p>
+      <div class="body">
+        <h3 class="add">Added</h3>
+        <ul>
+          <li><b>Billing platform, built from scratch</b> — credit system with usage tracking, credit packs, and auto-recharge; the full Stripe subscription stack: seat billing, pause/resume, upgrades and downgrades, coupons, automatic tax, dunning; enterprise and education plan catalogs</li>
+          <li><b>Generation pipeline</b> — async-task orchestration with timeout and cancellation semantics, webhook-driven provider callbacks, a rules-based routing engine with dynamic pricing, and provider fallback chains</li>
+          <li><b>30+ generative models integrated</b> across image, video, and audio — Seedance, Kling, Veo, Wan, Runway, Seedream, Nano Banana, ElevenLabs, and more — plus a LoRA training platform with versioning across architectures</li>
+          <li><b>Batch generation lane</b> — provider-agnostic lane over the OpenAI Batch API for bulk workflow runs: <b>−50% provider cost</b>, split pricing with premium refunds on delivery, queued and wake turns so the copilot keeps working while batches complete</li>
+          <li><b>Copilot sub-agent architecture</b> — generation tools re-architected into sub-agents with model-specific tools per modality; the design in production today</li>
+          <li><b>Org multi-tenancy</b> — roles, invitations, seat billing, org-scoped storage and auth, with live data migration for all existing users</li>
+          <li><b>Realtime comments</b> — threads with paginated replies, @mentions, emoji reactions, digest emails · <b>public API platform</b> · <b>bulk-download/zip pipeline</b></li>
+        </ul>
+        <h3 class="imp">Improved</h3>
+        <ul>
+          <li>Long-form video rendering: heavy renders moved off shared worker pools onto per-task Cloud Run jobs with parallel chunked rendering — <b>~10× faster exports</b> instead of timeouts</li>
+          <li>Enterprise burst charging: serial per-org credit locks replaced with batched settlement — <b>p95 58s → 3s</b>, diagnosed from production traces and validated at 10,000-task load</li>
+          <li>Cost lanes: discounted provider routing with fail-closed rate guards and prompt-cache verification</li>
+        </ul>
+        <h3 class="fix">Fixed</h3>
+        <ul>
+          <li>Batch fan-in OOM that refunded paid generations (attempt budget + job memory + per-task hydration)</li>
+          <li>Long composes swept at their timeout · connection-pool exhaustion at peak load · provider capacity starvation under burst</li>
+          <li>30+ teammate PRs review-hardened with fixes pushed before merge — billing holes, race conditions, deploy-order hazards</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="release">
+    <div class="rail"><i></i></div>
+    <div class="card">
+      <div class="rhead"><h2>v4.0.0 — The Fintech Release</h2></div>
+      <p class="rmeta"><span class="avatar">NK</span>nirmal released this Jun 2023 · <span class="mono">planify-capital</span> · led the backend team</p>
+      <div class="body">
+        <h3 class="add">Added</h3>
+        <ul>
+          <li><b>Payments across three rails</b> — Billdesk, Paytm, and ICICI API Banking — plus a subscription module for premium content and direct payment links for channel partners</li>
+          <li><b>Buy-sell trading platform</b> (flagship) — bids on unlisted stock with bid management and fulfillment, portfolio, tradebook and sharebook, investor wallets with withdrawals and cashbacks, partner incentive modules</li>
+          <li><b>KYC workflows across 19 verification types</b> · research report sections · a daily stock &amp; news notification service</li>
+          <li>Embeddable stock-performance widgets for partner sites · admin dashboards for leads, refunds, feedback, and subscriptions · a redesigned login/signup flow</li>
+        </ul>
+        <h3 class="imp">Improved</h3>
+        <ul>
+          <li>Led the backend team through the platform's core buildout — delivery, reviews, and internal-operations tooling</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="release">
+    <div class="rail"><i></i></div>
+    <div class="card">
+      <div class="rhead"><h2>v3.0.0 — The ML Release</h2></div>
+      <p class="rmeta"><span class="avatar">NK</span>nirmal released this Jul 2021 · <span class="mono">lenskart</span> · Data Scientist I / ML Engineer</p>
+      <div class="body">
+        <h3 class="add">Added</h3>
+        <ul>
+          <li><b>Realtime personalized recommendations</b> — implicit matrix factorization, Prod2Vec and Meta-Prod2Vec, image similarity — powering product recommendations, re-ranked category pages, and cold-start suggestions for new users</li>
+          <li><b>Eyewear computer vision</b> — face-width and frame-size prediction from selfies (Face Mesh + XGBoost) and pupil-distance measurement for bifocal lenses (LCNN edge detection); a photo replaces an in-store fitting</li>
+          <li><b>Search-by-look</b> — upload a photo of someone wearing frames and find them: object detection, embeddings, image similarity, with multisearch refinement by brand, color, material, and size</li>
+          <li><b>Auto-generated color swatches</b> for the catalog, using clustering and classifiers on product appearance</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="release">
+    <div class="rail"><i></i></div>
+    <details class="card">
+      <summary><h2>v2.0.0 — v1.0.0</h2><p class="rmeta">Cogitate (.NET, 2021) · Sonatic AI (deep learning, 2020)</p><span class="exp">show ▾</span></summary>
+      <div class="body">
+        <h3 class="add">v2.0.0 · Cogitate (Associate Developer, .NET)</h3>
+        <ul>
+          <li>Insurance digitalization: <b>Cogitate Cyber Liability Solution, Commercial Auto, and the ClaimInsight application</b></li>
+          <li>Contributed across roles on in-house and large client projects — frontend web, backend structure in .NET MVC, and chatbot projects; cross-team critical bug fixes</li>
+        </ul>
+        <h3 class="add">v1.0.0 · Sonatic AI (Associate R&amp;D Engineer, Deep Learning)</h3>
+        <ul>
+          <li>On the core team from initial ideation of a hiring platform</li>
+          <li><b>LSTM model</b> improving search results from user skills · <b>email automation</b> with wit.ai intent recognition · <b>NLP personality-trait models</b> for personalized recommendations</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+  <div class="release">
+    <div class="rail"><i></i></div>
+    <div class="card">
+      <div class="rhead"><h2>v0.9.0</h2><span class="tag pre">Pre-release</span></div>
+      <p class="rmeta"><span class="avatar">NK</span>2017 – 2021 · <span class="mono">birla-institute-of-applied-sciences</span></p>
+      <div class="body">
+        <ul>
+          <li>B.Tech, Computer Science · published <b>"Intelligent Data-Analytic Approach for Restaurant Recommendation"</b></li>
+          <li>Certifications: Deep Learning Specialization · Neural Networks and Deep Learning · Structuring Machine Learning Projects · Data Visualization with Python</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Watch this repo: <a href="https://github.com/nirmalkirola" target="_blank" rel="noopener">github.com/nirmalkirola</a> ·
+    <a href="https://www.linkedin.com/in/nirmal-kirola/" target="_blank" rel="noopener">linkedin</a> ·
+    <span class="mono">nirmalkirola@gmail.com</span> — v6.0.0 is taking feature requests.
+  </footer>
+</div>
+
+</body>
+</html>

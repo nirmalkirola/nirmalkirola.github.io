@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Nirmal Kirola — backend engineer at Morphic. The career as an expedition route with camp logs.">
+<meta property="og:title" content="Nirmal Kirola — The Route">
+<meta property="og:description" content="Six years from the foothills of deep learning to the high camps of production infrastructure — a topographic career map.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nirmalkirola.github.io/trail/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23EFF1EA'/><text x='32' y='44' font-family='monospace' font-size='34' font-weight='700' text-anchor='middle' fill='%2314685A'>N</text></svg>">
+<style>html,body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>The Route</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #EFF1EA;
+    --ink: #2A302B;
+    --dim: #64705F;
+    --contour: #C9BCA0;
+    --contour-2: #DCD2BC;
+    --route: #14685A;
+    --flag: #B4552D;
+    --card: #F7F8F3;
+    --border: #DDDFD3;
+  }
+  ::selection { background: #14685A2B; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    padding-inline: 18px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding-block: 48px 64px; }
+  .mono { font-family: "IBM Plex Mono", monospace; }
+  a { color: var(--route); text-decoration: none; }
+  a:hover, a:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--dim); margin: 0 0 10px;
+  }
+  h1 {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-size: clamp(38px, 7vw, 58px); font-weight: 700;
+    letter-spacing: -0.015em; line-height: 1.02;
+    margin: 0 0 14px; text-wrap: balance;
+  }
+  .lede { color: var(--dim); max-width: 58ch; margin: 0 0 30px; }
+  .lede b { color: var(--ink); font-weight: 600; }
+
+  .map {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .map svg { display: block; width: 100%; height: auto; }
+  .wp-label { font-family: "IBM Plex Mono", monospace; font-size: 11px; fill: var(--ink); }
+  .wp-sub { font-family: "IBM Plex Mono", monospace; font-size: 9.5px; fill: var(--dim); }
+  .legend { font-family: "IBM Plex Mono", monospace; font-size: 10px; fill: var(--dim); }
+
+  h2 {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-size: 24px; font-weight: 600; margin: 44px 0 6px;
+  }
+  .sub { color: var(--dim); margin: 0 0 20px; max-width: 58ch; }
+
+  .camps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  details.camp {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .camp > summary { list-style: none; cursor: pointer; }
+  .camp > summary::-webkit-details-marker { display: none; }
+  .camp > summary:focus-visible { outline: 2px solid var(--route); outline-offset: 4px; border-radius: 4px; }
+  .camp:hover { border-color: var(--route); }
+  .camp[open] { grid-column: 1 / -1; border-color: var(--route); }
+  .more {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px;
+    color: var(--route); margin-top: 10px;
+  }
+  .camp[open] .more .open-t, .camp:not([open]) .more .close-t { display: none; }
+  .log { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+  .log .meta {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px;
+    color: var(--dim); margin: 0 0 10px;
+  }
+  .log ul { margin: 0; padding-left: 4px; list-style: none; color: var(--ink); font-size: 14px; max-width: 74ch; }
+  .log li { margin: 5px 0; padding-left: 16px; position: relative; }
+  .log li::before { content: "▹"; position: absolute; left: 0; color: var(--route); }
+  .log li .d { color: var(--dim); }
+  .gear { margin-top: 12px; }
+  .gear b {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500;
+    color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 6px;
+  }
+  .gear span {
+    display: inline-block; font-size: 12.5px; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--border); border-radius: 999px;
+    padding: 1px 10px; margin: 2px 4px 2px 0;
+  }
+  a.wp-link { cursor: pointer; }
+  .camp .el {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px;
+    color: var(--route); margin: 0 0 4px;
+  }
+  .camp.now .el { color: var(--flag); }
+  .camp h3 { margin: 0; font-size: 15.5px; }
+  .camp .org { color: var(--dim); font-weight: 400; }
+  .camp p { margin: 6px 0 0; color: var(--dim); font-size: 13.5px; }
+
+  footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--dim); font-size: 14px; }
+  footer .mono { color: var(--ink); }
+  button.copy {
+    font: inherit; font-size: 13px; color: var(--route);
+    background: none; border: 1px solid var(--border); border-radius: 999px;
+    padding: 2px 12px; cursor: pointer;
+  }
+  button.copy:hover { border-color: var(--route); }
+  .copied { color: var(--flag); font-size: 13px; }
+
+  @media (max-width: 760px) { .camps { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px) { .camps { grid-template-columns: 1fr; } }
+
+  @keyframes drawroute { to { stroke-dashoffset: 0; } }
+  @keyframes ping { 0% { r: 5; opacity: 0.9; } 100% { r: 14; opacity: 0; } }
+  @media (prefers-reduced-motion: no-preference) {
+    .route-line { stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawroute 2.6s ease 0.3s forwards; }
+    .here-ring { animation: ping 1.8s ease-out infinite; }
+  }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <p class="eyebrow">Expedition log · 2020 → present</p>
+  <h1>The Route</h1>
+  <p class="lede">Six years from the foothills of deep learning to the high camps of production
+  infrastructure. <b>Nirmal Kirola</b> — backend engineer at Morphic, based in Nainital,
+  where the metaphor is also the view.</p>
+
+  <div class="map">
+    <svg viewBox="0 0 920 400" aria-label="Stylized topographic map of a career route from Sonatic AI to Morphic">
+      <!-- graticule -->
+      <g stroke="#0000000A"><line x1="0" y1="100" x2="920" y2="100"/><line x1="0" y1="200" x2="920" y2="200"/><line x1="0" y1="300" x2="920" y2="300"/><line x1="230" y1="0" x2="230" y2="400"/><line x1="460" y1="0" x2="460" y2="400"/><line x1="690" y1="0" x2="690" y2="400"/></g>
+      <!-- foothills (early career) -->
+      <g fill="none" stroke="var(--contour-2)" stroke-width="1">
+        <ellipse cx="120" cy="300" rx="105" ry="62" transform="rotate(-12 120 300)"/>
+        <ellipse cx="120" cy="300" rx="80" ry="45" transform="rotate(-12 120 300)"/>
+        <ellipse cx="255" cy="255" rx="90" ry="52" transform="rotate(9 255 255)"/>
+      </g>
+      <g fill="none" stroke="var(--contour)" stroke-width="1">
+        <ellipse cx="120" cy="300" rx="52" ry="28" transform="rotate(-12 120 300)"/>
+        <ellipse cx="255" cy="255" rx="60" ry="33" transform="rotate(9 255 255)"/>
+        <ellipse cx="255" cy="255" rx="32" ry="17" transform="rotate(9 255 255)"/>
+      </g>
+      <!-- middle ridge (lenskart / planify) -->
+      <g fill="none" stroke="var(--contour-2)" stroke-width="1">
+        <ellipse cx="450" cy="205" rx="130" ry="72" transform="rotate(-18 450 205)"/>
+        <ellipse cx="450" cy="205" rx="102" ry="55" transform="rotate(-18 450 205)"/>
+      </g>
+      <g fill="none" stroke="var(--contour)" stroke-width="1">
+        <ellipse cx="450" cy="205" rx="74" ry="39" transform="rotate(-18 450 205)"/>
+        <ellipse cx="450" cy="205" rx="47" ry="24" transform="rotate(-18 450 205)"/>
+        <ellipse cx="450" cy="205" rx="23" ry="12" transform="rotate(-18 450 205)"/>
+      </g>
+      <!-- the massif (morphic) -->
+      <g fill="none" stroke="var(--contour-2)" stroke-width="1">
+        <ellipse cx="740" cy="140" rx="150" ry="92" transform="rotate(14 740 140)"/>
+        <ellipse cx="740" cy="140" rx="122" ry="72" transform="rotate(14 740 140)"/>
+        <ellipse cx="740" cy="140" rx="95" ry="54" transform="rotate(14 740 140)"/>
+      </g>
+      <g fill="none" stroke="var(--contour)" stroke-width="1.2">
+        <ellipse cx="740" cy="140" rx="68" ry="38" transform="rotate(14 740 140)"/>
+        <ellipse cx="740" cy="140" rx="43" ry="24" transform="rotate(14 740 140)"/>
+        <ellipse cx="740" cy="140" rx="20" ry="11" transform="rotate(14 740 140)"/>
+      </g>
+
+      <!-- route -->
+      <path class="route-line" pathLength="1"
+        d="M 62 352 C 100 332, 120 316, 152 306 S 222 272, 258 258 C 300 240, 340 250, 384 236 S 448 210, 472 196 C 510 174, 560 190, 610 172 S 700 146, 738 138"
+        fill="none" stroke="var(--route)" stroke-width="2.2" stroke-dasharray="6 5" stroke-linecap="round"/>
+
+      <!-- waypoints -->
+      <g>
+        <circle cx="62" cy="352" r="4.5" fill="var(--paper)" stroke="var(--route)" stroke-width="2"/>
+        <text class="wp-label" x="54" y="374">Sonatic AI</text><text class="wp-sub" x="54" y="386">2020 · trailhead</text>
+        <circle cx="152" cy="306" r="4.5" fill="var(--paper)" stroke="var(--route)" stroke-width="2"/>
+        <text class="wp-label" x="128" y="290">Cogitate</text><text class="wp-sub" x="128" y="278">2021</text>
+        <circle cx="258" cy="258" r="4.5" fill="var(--paper)" stroke="var(--route)" stroke-width="2"/>
+        <text class="wp-label" x="238" y="238">Lenskart</text><text class="wp-sub" x="238" y="226">2021–23 · ML col</text>
+        <circle cx="472" cy="196" r="4.5" fill="var(--paper)" stroke="var(--route)" stroke-width="2"/>
+        <text class="wp-label" x="452" y="248">Planify</text><text class="wp-sub" x="452" y="260">2023–24 · fintech ridge</text>
+        <circle class="here-ring" cx="738" cy="138" r="5" fill="none" stroke="var(--flag)" stroke-width="1.5"/>
+        <circle cx="738" cy="138" r="4.5" fill="var(--flag)"/>
+        <path d="M 738 132 v -16 l 13 4 -13 4" fill="var(--flag)"/>
+        <text class="wp-label" x="756" y="128">Morphic</text><text class="wp-sub" x="756" y="140">2024 → · high camp, climbing</text>
+      </g>
+
+      <!-- waypoint hit areas -->
+      <g fill="transparent">
+        <a class="wp-link" href="#camp-sonatic"><circle cx="62" cy="352" r="16"/></a>
+        <a class="wp-link" href="#camp-cogitate"><circle cx="152" cy="306" r="16"/></a>
+        <a class="wp-link" href="#camp-lenskart"><circle cx="258" cy="258" r="16"/></a>
+        <a class="wp-link" href="#camp-planify"><circle cx="472" cy="196" r="16"/></a>
+        <a class="wp-link" href="#camp-morphic"><circle cx="738" cy="138" r="18"/></a>
+      </g>
+
+      <!-- cartouche -->
+      <g>
+        <rect x="18" y="16" width="196" height="64" rx="4" fill="var(--card)" stroke="var(--border)"/>
+        <text class="legend" x="30" y="34">CAREER SURVEY · SHEET 1 OF 1</text>
+        <text class="legend" x="30" y="49">— — route travelled</text>
+        <text class="legend" x="30" y="64">⚑ current position · contours ≈ effort</text>
+      </g>
+      <!-- scale bar -->
+      <g>
+        <line x1="740" y1="372" x2="880" y2="372" stroke="var(--ink)" stroke-width="1"/>
+        <line x1="740" y1="368" x2="740" y2="376" stroke="var(--ink)" stroke-width="1"/>
+        <line x1="810" y1="368" x2="810" y2="376" stroke="var(--ink)" stroke-width="1"/>
+        <line x1="880" y1="368" x2="880" y2="376" stroke="var(--ink)" stroke-width="1"/>
+        <text class="legend" x="740" y="390">0</text><text class="legend" x="796" y="390">3 yrs</text><text class="legend" x="864" y="390">6 yrs</text>
+      </g>
+    </svg>
+  </div>
+
+  <h2>Camps</h2>
+  <p class="sub">Each camp left the route higher than it found it. Click one to read its log.</p>
+  <div class="camps">
+    <details class="camp now" id="camp-morphic">
+      <summary>
+        <p class="el">▲ 4,800 m · current</p>
+        <h3>Software Engineer <span class="org">· Morphic</span></h3>
+        <p>The AI creative studio's backend: billing, generation infrastructure, and the copilot.</p>
+        <p class="more"><span class="open-t">▸ read the log</span><span class="close-t">▾ close the log</span></p>
+      </summary>
+      <div class="log">
+        <p class="meta">Nov 2024 → present · AI creative studio · high camp, still climbing</p>
+        <ul>
+          <li>Designed and built the <b>billing platform from scratch</b>: credit system with usage tracking, credit packs, auto-recharge, and the full Stripe stack — seat billing, pause/resume, upgrades/downgrades, coupons, automatic tax, dunning, enterprise and education plan catalogs.</li>
+          <li>Built the <b>generation pipeline</b> behind every job: async-task orchestration with timeout and cancellation semantics, webhook-driven provider callbacks, a rules-based routing engine with dynamic pricing, provider fallback chains — and a LoRA training platform with versioning across architectures.</li>
+          <li>Integrated <b>30+ generative models</b> across image, video, and audio (Seedance, Kling, Veo, Wan, Runway, Seedream, ElevenLabs…).</li>
+          <li>Moved heavy renders to <b>elastic per-task Cloud Run jobs</b> with parallel chunked rendering — long exports finish <b>~10× faster</b> instead of timing out.</li>
+          <li>Built a provider-agnostic <b>batch generation lane</b> over the OpenAI Batch API: <b>−50% provider cost</b> on bulk runs, split pricing with premium refunds, queued and wake turns so the copilot keeps working.</li>
+          <li>Cut enterprise burst charge latency <b>p95 58 s → 3 s</b> with batched credit settlement, validated at 10,000-task load.</li>
+          <li>Re-architected the copilot's generation tools into <b>sub-agents with model-specific tools</b> per modality — in production today.</li>
+          <li>Also shipped: org multi-tenancy with live data migration, the public API platform, realtime comments (threads, mentions, reactions, digests), the bulk-download pipeline. <span class="d">Plus 30+ teammate PRs review-hardened and merged, and the incident-response rotation.</span></li>
+        </ul>
+        <p class="gear"><b>Gear</b><span>TypeScript</span><span>Node</span><span>PostgreSQL</span><span>Redis</span><span>GCP · Cloud Run</span><span>Temporal</span><span>Stripe</span><span>ffmpeg</span></p>
+      </div>
+    </details>
+
+    <details class="camp" id="camp-planify">
+      <summary>
+        <p class="el">▲ 3,600 m</p>
+        <h3>Software Engineer <span class="org">· Planify Capital</span></h3>
+        <p>Led the backend team for a fintech platform trading unlisted stock.</p>
+        <p class="more"><span class="open-t">▸ read the log</span><span class="close-t">▾ close the log</span></p>
+      </summary>
+      <div class="log">
+        <p class="meta">Jun 2023 → Nov 2024 · Gurugram · fintech ridge · backend lead</p>
+        <ul>
+          <li>Enabled <b>stock purchases across three payment rails</b> — Billdesk, Paytm, and ICICI API Banking — plus a subscription module for premium content and direct payment links for channel partners.</li>
+          <li>Built the flagship <b>buy-sell trading platform</b>: bid management and fulfillment, portfolio, tradebook and sharebook, investor wallets with withdrawals and cashbacks, and partner incentive modules.</li>
+          <li>Managed <b>KYC workflows across 19 verification types</b>, research report sections, and a daily stock and news notification service.</li>
+          <li>Shipped embeddable stock-performance widgets for partner sites, internal dashboards for leads, refunds, and feedback, and a redesigned login/signup flow.</li>
+        </ul>
+        <p class="gear"><b>Gear</b><span>Python</span><span>FastAPI</span><span>Flask</span><span>PostgreSQL</span><span>Payments APIs</span></p>
+      </div>
+    </details>
+
+    <details class="camp" id="camp-lenskart">
+      <summary>
+        <p class="el">▲ 2,700 m</p>
+        <h3>Data Scientist I / MLE <span class="org">· Lenskart</span></h3>
+        <p>Recommender systems and computer vision for eyewear at e-commerce scale.</p>
+        <p class="more"><span class="open-t">▸ read the log</span><span class="close-t">▾ close the log</span></p>
+      </summary>
+      <div class="log">
+        <p class="meta">Jul 2021 → Jun 2023 · Faridabad · the ML col</p>
+        <ul>
+          <li><b>Personalized recommendations in real time</b>: implicit matrix factorization, Prod2Vec and Meta-Prod2Vec, image similarity — powering product recommendations, re-ranked category pages, and cold-start suggestions for new users.</li>
+          <li><b>Eyewear computer vision</b>: face-width and frame-size prediction from selfies (Face Mesh + XGBoost) and pupil-distance measurement for bifocal lenses (LCNN edge detection) — a photo replaces an in-store fitting.</li>
+          <li><b>Search by look</b>: upload a photo of someone wearing frames and find them — object detection, embeddings, image similarity — with multisearch refinement by brand, color, material, and size.</li>
+          <li>Auto-generated <b>color swatches</b> for the catalog using clustering and classifiers.</li>
+        </ul>
+        <p class="gear"><b>Gear</b><span>Python</span><span>XGBoost</span><span>Embeddings</span><span>Face Mesh</span><span>Matrix factorization</span></p>
+      </div>
+    </details>
+
+    <details class="camp" id="camp-cogitate">
+      <summary>
+        <p class="el">▲ 1,900 m</p>
+        <h3>Associate Developer <span class="org">· Cogitate</span></h3>
+        <p>Insurance digitalization in .NET — a deliberate detour into new terrain.</p>
+        <p class="more"><span class="open-t">▸ read the log</span><span class="close-t">▾ close the log</span></p>
+      </summary>
+      <div class="log">
+        <p class="meta">Jan 2021 → Jul 2021 · Mumbai</p>
+        <ul>
+          <li>Worked on insurance digitalization: <b>Cogitate Cyber Liability Solution, Commercial Auto, and the ClaimInsight application</b>.</li>
+          <li>Contributed across roles — frontend web development, backend structure in .NET MVC, and chatbot projects — on both in-house and large client work.</li>
+          <li>Collaborated across teams on critical bug fixes; took the role specifically to gain breadth in a different domain and stack, fast.</li>
+        </ul>
+        <p class="gear"><b>Gear</b><span>.NET MVC</span><span>C#</span><span>Chatbots</span></p>
+      </div>
+    </details>
+
+    <details class="camp" id="camp-sonatic">
+      <summary>
+        <p class="el">▲ 1,400 m</p>
+        <h3>R&amp;D Engineer, DL <span class="org">· Sonatic AI</span></h3>
+        <p>Deep learning for a hiring platform, from the idea stage. The trailhead.</p>
+        <p class="more"><span class="open-t">▸ read the log</span><span class="close-t">▾ close the log</span></p>
+      </summary>
+      <div class="log">
+        <p class="meta">Jul 2020 → Jan 2021 · Haryana · first pitch on the wall</p>
+        <ul>
+          <li>Part of the core team from initial ideation on a platform to ease hiring pain across industries.</li>
+          <li>Built an <b>LSTM model</b> to improve search results based on user skills.</li>
+          <li>Created an <b>email automation model</b> for fast automated replies, and an email intent-recognition model on wit.ai for better context understanding.</li>
+          <li>Developed an <b>NLP personality-trait model</b> for personalized recommendations.</li>
+        </ul>
+        <p class="gear"><b>Gear</b><span>Python</span><span>LSTM</span><span>NLP</span><span>wit.ai</span></p>
+      </div>
+    </details>
+
+    <details class="camp" id="camp-base">
+      <summary>
+        <p class="el">▲ base camp</p>
+        <h3>B.Tech, CS <span class="org">· Birla Institute</span></h3>
+        <p>2017–2021, with a published paper. Where the route was planned.</p>
+        <p class="more"><span class="open-t">▸ read the log</span><span class="close-t">▾ close the log</span></p>
+      </summary>
+      <div class="log">
+        <p class="meta">Aug 2017 → Dec 2021 · Birla Institute of Applied Sciences · Computer Science</p>
+        <ul>
+          <li>Published: <b>"Intelligent Data-Analytic Approach for Restaurant Recommendation."</b></li>
+          <li>Certifications along the way: Deep Learning Specialization, Neural Networks and Deep Learning, Structuring Machine Learning Projects, Data Visualization with Python.</li>
+        </ul>
+        <p class="gear"><b>Gear</b><span>CS fundamentals</span><span>Deep learning</span><span>Data viz</span></p>
+      </div>
+    </details>
+  </div>
+
+  <footer>
+    Route inquiries: <span class="mono">nirmalkirola@gmail.com</span>
+    <button class="copy" id="copy-email" type="button">copy</button><span class="copied" id="copy-note" hidden> copied</span> ·
+    <a href="https://github.com/nirmalkirola" target="_blank" rel="noopener">GitHub</a> ·
+    <a href="https://www.linkedin.com/in/nirmal-kirola/" target="_blank" rel="noopener">LinkedIn</a>
+    <br>Surveyed from Nainital, 2,084 m. Backend by day, mountains on weekends.
+  </footer>
+</div>
+
+<script>
+  /* One camp log open at a time; map waypoints open and scroll to their camp. */
+  try {
+    const camps = document.querySelectorAll('details.camp');
+    camps.forEach((d) => {
+      d.addEventListener('toggle', () => {
+        if (d.open) { camps.forEach((o) => { if (o !== d) { o.open = false; } }); }
+      });
+    });
+    document.querySelectorAll('a.wp-link').forEach((a) => {
+      a.addEventListener('click', () => {
+        const t = document.querySelector(a.getAttribute('href'));
+        if (t) { t.open = true; }
+      });
+    });
+  } catch (e) { /* cards still expand natively */ }
+
+  const btn = document.getElementById('copy-email');
+  const note = document.getElementById('copy-note');
+  btn.addEventListener('click', () => {
+    try {
+      navigator.clipboard.writeText('nirmalkirola@gmail.com').then(() => {
+        note.hidden = false;
+        setTimeout(() => { note.hidden = true; }, 1800);
+      }).catch(() => {});
+    } catch (e) { /* convenience only */ }
+  });
+</script>
+
+</body>
+</html>
