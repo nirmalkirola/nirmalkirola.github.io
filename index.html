@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Nirmal Kirola — backend engineer at Morphic. Billing, generation infrastructure, and the AI copilot, presented as a code workspace.">
+<meta property="og:title" content="Nirmal Kirola — portfolio">
+<meta property="og:description" content="Backend engineer at Morphic: billing platform, generation pipeline behind 30+ models, elastic video rendering. Browse it like a codebase.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nirmalkirola.github.io/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%2323272E'/><text x='32' y='44' font-family='monospace' font-size='34' font-weight='700' text-anchor='middle' fill='%2361AFEF'>N</text></svg>">
+<style>html,body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>nirmal.code-workspace</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ground: #17191D;
+    --editor: #23272E;
+    --side: #1E2227;
+    --panel: #21252B;
+    --border: #181C20;
+    --fg: #ABB2BF;
+    --dim: #7F848E;
+    --faint: #4B5263;
+    --accent: #61AFEF;
+    --purple: #C678DD;
+    --green: #98C379;
+    --red: #E06C75;
+    --yellow: #E5C07B;
+    --amber: #E5C07B;
+    --orange: #D19A66;
+    --punct: #7B828F;
+    --sel: #61AFEF2E;
+  }
+  ::selection { background: var(--sel); }
+
+  body {
+    background: var(--ground);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 13px;
+    padding-inline: 16px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-block: 36px 48px; }
+
+  .win {
+    height: calc(100vh - 84px);
+    height: calc(100dvh - 84px);
+    min-height: 480px;
+    background: var(--editor);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 24px 70px -30px #000, 0 0 0 1px #00000066;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---- title bar ---- */
+  .titlebar {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 9px 14px;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #FF5F57; } .dot.y { background: #FEBC2E; } .dot.g { background: #28C840; }
+  .title { flex: 1; text-align: center; color: var(--dim); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---- main layout ---- */
+  .main { display: flex; flex: 1; min-height: 0; }
+
+  .activity {
+    width: 46px; flex: none;
+    background: var(--side);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center;
+    padding-block: 10px; gap: 4px;
+  }
+  .act {
+    width: 36px; height: 36px;
+    display: grid; place-items: center;
+    color: var(--faint); border: none; background: none; border-radius: 6px;
+    cursor: pointer;
+  }
+  .act.on { color: var(--fg); box-shadow: inset 2px 0 0 var(--accent); border-radius: 0; }
+  .act:hover { color: var(--fg); }
+  .act svg { width: 20px; height: 20px; }
+  .act.gear { margin-top: auto; }
+
+  .explorer {
+    width: 210px; flex: none;
+    background: var(--side);
+    border-right: 1px solid var(--border);
+    padding: 10px 0 14px;
+    overflow-y: auto;
+  }
+  .exp-h {
+    font-size: 10.5px; letter-spacing: 0.09em; color: var(--dim);
+    padding: 0 14px 8px; text-transform: uppercase;
+  }
+  .tree { list-style: none; margin: 0; padding: 0; }
+  .tree button {
+    display: flex; align-items: center; gap: 7px;
+    width: 100%; text-align: left;
+    font: inherit; color: var(--fg);
+    background: none; border: none; cursor: pointer;
+    padding: 4px 14px; line-height: 1.5;
+  }
+  .tree button:hover { background: #FFFFFF0A; }
+  .tree button.on { background: var(--sel); }
+  .tree .dir { color: var(--dim); cursor: default; }
+  .tree .dir:hover { background: none; }
+  .tree .in { padding-left: 30px; }
+  .fico { font-family: "JetBrains Mono", monospace; font-size: 9px; font-weight: 700; width: 16px; flex: none; text-align: center; }
+  .fi-md { color: #61AFEF; } .fi-ts { color: #519ABA; } .fi-py { color: #4B8BBE; }
+  .fi-js { color: #CBCB41; } .fi-yml { color: #A074C4; } .fi-txt { color: var(--dim); }
+  .caret { color: var(--faint); font-size: 10px; width: 10px; flex: none; }
+
+  .stage { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+
+  /* ---- tabs ---- */
+  .tabs { display: flex; background: var(--side); border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab {
+    display: flex; align-items: center; gap: 7px;
+    font: inherit; color: var(--dim);
+    background: var(--side);
+    border: none; border-right: 1px solid var(--border);
+    padding: 8px 10px 8px 12px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .tab.on { background: var(--editor); color: var(--fg); box-shadow: inset 0 2px 0 var(--accent); }
+  .tab .x { color: var(--faint); padding: 0 2px; border-radius: 3px; }
+  .tab .x:hover { color: var(--fg); background: #FFFFFF14; }
+
+  .crumbs { padding: 6px 16px; color: var(--dim); font-size: 12px; border-bottom: 1px solid transparent; }
+  .crumbs span { color: var(--faint); }
+
+  /* ---- editor ---- */
+  .editwrap { position: relative; flex: 1; min-height: 0; display: flex; }
+  .editor {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 13px; line-height: 1.65;
+    flex: 1;
+    overflow: auto;
+    padding: 10px 8px 26px 0;
+  }
+  .file { display: none; }
+  .file.on { display: block; }
+  .code { counter-reset: ln; min-width: max-content; }
+  .l { white-space: pre; padding-right: 24px; }
+  .l::before {
+    counter-increment: ln;
+    content: counter(ln);
+    display: inline-block;
+    width: 3.2ch; margin-right: 2.2ch;
+    text-align: right;
+    color: var(--faint);
+  }
+  .l:hover { background: #FFFFFF06; }
+
+  .c { color: var(--dim); font-style: italic; }
+  .k { color: var(--purple); }
+  .s { color: var(--green); }
+  .n { color: var(--orange); }
+  .t { color: var(--accent); }
+  .b { color: var(--red); }
+  .pn { color: var(--punct); }
+  .h { color: var(--red); font-weight: 700; }
+  .em { font-style: italic; color: var(--dim); }
+  .st { font-weight: 700; color: var(--fg); }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover, a:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+
+  .lens {
+    color: var(--faint); font-size: 11px;
+    padding-left: calc(3.2ch + 2.2ch + 0.6ch);
+  }
+  .lens button, .lens a { font: inherit; color: var(--faint); background: none; border: none; cursor: pointer; padding: 0; }
+  .lens button:hover, .lens a:hover { color: var(--accent); text-decoration: underline; }
+  .copied { color: var(--amber); }
+
+  /* ---- minimap: the file itself at 2.5px, like the real one ---- */
+  .minimap {
+    flex: none;
+    width: 76px;
+    padding: 6px 4px 6px 6px;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0.8;
+    font-size: 2.5px; line-height: 2.2;
+    border-left: 1px solid var(--border);
+    background: var(--editor);
+  }
+  .minimap .l { padding-right: 0; }
+  .minimap .l::before { display: none; }
+  .minimap .l:hover { background: none; }
+  .minimap .code { min-width: 0; }
+  .minimap a { color: var(--accent); }
+  @media (max-width: 760px) { .minimap { display: none; } .editor { padding-right: 16px; } }
+
+  /* ---- status bar ---- */
+  .status {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--panel);
+    color: #9DA5B4;
+    border-top: 1px solid var(--border);
+    font-size: 11.5px;
+    padding: 4px 12px;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .status .sp { flex: 1; }
+  .status .item { display: inline-flex; align-items: center; gap: 5px; }
+  .sync { display: inline-block; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sync { animation: spin 2.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* opening a file: lines stream into the buffer top to bottom */
+    .file.opening .l {
+      opacity: 0;
+      animation: line-in 0.2s ease forwards;
+      animation-delay: calc(var(--i, 0) * 14ms);
+    }
+    @keyframes line-in {
+      from { opacity: 0; transform: translateX(8px); }
+      to { opacity: 1; transform: none; }
+    }
+  }
+
+  @media (max-width: 760px) {
+    .wrap { padding-block: 14px 18px; }
+    .win { height: calc(100vh - 32px); height: calc(100dvh - 32px); }
+    .explorer { display: none; }
+    .side-open .explorer {
+      display: block;
+      position: absolute; z-index: 5;
+      top: 0; bottom: 0; left: 46px;
+      box-shadow: 20px 0 40px -20px #000C;
+    }
+    .main { position: relative; }
+  }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <div class="win">
+    <div class="titlebar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="title" id="wintitle">README.md — nirmal.code-workspace</span>
+      <span style="width:49px"></span>
+    </div>
+
+    <div class="main" id="main">
+      <div class="activity" aria-hidden="false">
+        <button class="act on" id="btn-files" title="Explorer" aria-label="Toggle explorer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3H7a1 1 0 0 0-1 1v13"/><path d="M17 6H10a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9z"/></svg>
+        </button>
+        <span class="act" title="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg></span>
+        <span class="act" title="Source control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="6" r="2.2"/><circle cx="7" cy="18" r="2.2"/><circle cx="17" cy="9" r="2.2"/><path d="M7 8.2v7.6M17 11.2c0 3-3 3.8-7.5 4.2"/></svg></span>
+        <span class="act" title="Extensions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></span>
+        <span class="act gear" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg></span>
+      </div>
+
+      <nav class="explorer" id="explorer">
+        <p class="exp-h">Explorer · portfolio</p>
+        <ul class="tree">
+          <li><button data-file="readme"><span class="fico fi-md">M↓</span>README.md</button></li>
+          <li><button class="dir" tabindex="-1"><span class="caret">▾</span><span class="fico"> </span>systems</button></li>
+          <li><button class="in" data-file="morphic"><span class="fico fi-ts">TS</span>morphic.ts</button></li>
+          <li><button class="in" data-file="planify"><span class="fico fi-ts">TS</span>planify.ts</button></li>
+          <li><button class="in" data-file="lenskart"><span class="fico fi-py">PY</span>lenskart.py</button></li>
+          <li><button data-file="experience"><span class="fico fi-js">{}</span>experience.jsonc</button></li>
+          <li><button data-file="stack"><span class="fico fi-yml">Y</span>stack.yml</button></li>
+          <li><button data-file="education"><span class="fico fi-txt">≡</span>education.txt</button></li>
+          <li><button data-file="contact"><span class="fico fi-js">{}</span>contact.json</button></li>
+        </ul>
+      </nav>
+
+      <div class="stage">
+        <div class="tabs" id="tabs"></div>
+        <div class="crumbs" id="crumbs">portfolio <span>›</span> README.md</div>
+
+        <div class="editwrap">
+        <div class="editor" id="editor">
+
+          <div class="file on" id="f-readme" data-name="README.md" data-lang="Markdown" data-path="portfolio › README.md">
+            <div class="code">
+<div class="l"><span class="h"># Nirmal Kirola</span></div>
+<div class="l"><span class="pn">&gt;</span> <span class="em">backend engineer · Morphic (AI creative studio) · Nainital, India</span></div>
+<div class="l"> </div>
+<div class="l">I build the backend of <span class="st">**Morphic**</span> — its billing and credit platform,</div>
+<div class="l">the generation pipeline behind 30+ image, video and audio models,</div>
+<div class="l">and the infrastructure that keeps an AI copilot rendering at scale.</div>
+<div class="l">Before that: fintech backend at <span class="st">**Planify**</span>, machine learning at <span class="st">**Lenskart**</span>.</div>
+<div class="l"> </div>
+<div class="l"><span class="h">## metrics</span></div>
+<div class="l"><span class="pn">|</span> models integrated <span class="pn">|</span> <span class="n">30+</span>      <span class="pn">|</span></div>
+<div class="l"><span class="pn">|</span> render speedup    <span class="pn">|</span> <span class="n">~10x</span>     <span class="pn">|</span></div>
+<div class="l"><span class="pn">|</span> batch cost        <span class="pn">|</span> <span class="n">-50%</span>     <span class="pn">|</span></div>
+<div class="l"><span class="pn">|</span> charge p95        <span class="pn">|</span> <span class="n">58s → 3s</span> <span class="pn">|</span></div>
+<div class="l"> </div>
+<div class="l"><span class="h">## links</span></div>
+<div class="l"><span class="pn">-</span> <a href="https://github.com/nirmalkirola" target="_blank" rel="noopener">github.com/nirmalkirola</a></div>
+<div class="l"><span class="pn">-</span> <a href="https://www.linkedin.com/in/nirmal-kirola/" target="_blank" rel="noopener">linkedin.com/in/nirmal-kirola</a></div>
+<div class="l"><span class="pn">-</span> nirmalkirola@gmail.com</div>
+<div class="l"> </div>
+<div class="l"><span class="em">_backend by day, mountains on weekends._</span></div>
+            </div>
+          </div>
+
+          <div class="file" id="f-morphic" data-name="morphic.ts" data-lang="TypeScript" data-path="portfolio › systems › morphic.ts">
+            <div class="code">
+<div class="l"><span class="c">// Morphic — AI creative studio · 2024 → now</span></div>
+<div class="l"><span class="k">export const</span> <span class="t">systems</span> <span class="pn">=</span> <span class="pn">[</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">name</span><span class="pn">:</span> <span class="s">"billing-and-credits"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">metric</span><span class="pn">:</span> <span class="s">"stripe · credits"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">built</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">      <span class="s">"credit system with usage tracking, credit packs, auto-recharge"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"full Stripe stack: seat billing, pause/resume, upgrades/downgrades"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"coupons, automatic tax, dunning"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"enterprise + education plan catalogs"</span><span class="pn">,</span></div>
+<div class="l">    <span class="pn">],</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">name</span><span class="pn">:</span> <span class="s">"generation-pipeline"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">metric</span><span class="pn">:</span> <span class="s">"30+ models"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">built</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">      <span class="s">"async-task orchestration with timeout + cancellation semantics"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"webhook-driven provider callbacks"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"rules-based routing engine with dynamic pricing"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"provider fallback chains"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"LoRA training platform — versioning across architectures"</span><span class="pn">,</span></div>
+<div class="l">    <span class="pn">],</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">name</span><span class="pn">:</span> <span class="s">"elastic-video-rendering"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">metric</span><span class="pn">:</span> <span class="s">"~10x faster"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">built</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">      <span class="s">"heavy renders moved off shared worker pools"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"per-task Cloud Run jobs with parallel chunked rendering"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"long exports finish in minutes instead of timing out"</span><span class="pn">,</span></div>
+<div class="l">    <span class="pn">],</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">name</span><span class="pn">:</span> <span class="s">"batch-generation-lane"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">metric</span><span class="pn">:</span> <span class="s">"-50% cost"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">built</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">      <span class="s">"provider-agnostic lane over the OpenAI Batch API, for bulk workflow runs"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"split pricing — the premium is refunded on batch delivery"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"queued + wake turns: the copilot keeps working while batches run"</span><span class="pn">,</span></div>
+<div class="l">    <span class="pn">],</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">name</span><span class="pn">:</span> <span class="s">"batched-credit-settlement"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">metric</span><span class="pn">:</span> <span class="s">"p95 58s → 3s"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">built</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">      <span class="s">"serial per-org credit locks → batched settlement"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"diagnosed from production traces"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"validated at 10,000-task load"</span><span class="pn">,</span></div>
+<div class="l">    <span class="pn">],</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">name</span><span class="pn">:</span> <span class="s">"copilot-subagent-architecture"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">metric</span><span class="pn">:</span> <span class="s">"in production"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">built</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">      <span class="s">"generation tools re-architected into sub-agents"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"model-specific tools per modality"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"the design the copilot runs on today"</span><span class="pn">,</span></div>
+<div class="l">    <span class="pn">],</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l"><span class="pn">]</span> <span class="k">as const</span><span class="pn">;</span></div>
+<div class="l"> </div>
+<div class="l"><span class="k">export const</span> <span class="t">alsoShipped</span> <span class="pn">=</span> <span class="pn">[</span></div>
+<div class="l">  <span class="s">"org multi-tenancy migration — live data migration for all users"</span><span class="pn">,</span></div>
+<div class="l">  <span class="s">"public API platform"</span><span class="pn">,</span></div>
+<div class="l">  <span class="s">"realtime comments: threads, mentions, reactions, digest emails"</span><span class="pn">,</span></div>
+<div class="l">  <span class="s">"bulk-download pipeline"</span><span class="pn">,</span></div>
+<div class="l"><span class="pn">];</span></div>
+            </div>
+          </div>
+
+          <div class="file" id="f-planify" data-name="planify.ts" data-lang="TypeScript" data-path="portfolio › systems › planify.ts">
+            <div class="code">
+<div class="l"><span class="c">// Planify Capital — fintech · 2023 → 2024 · led the backend team</span></div>
+<div class="l"><span class="k">export const</span> <span class="t">systems</span> <span class="pn">=</span> <span class="pn">[</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">name</span><span class="pn">:</span> <span class="s">"payments-and-subscriptions"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">metric</span><span class="pn">:</span> <span class="s">"3 payment rails"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">built</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">      <span class="s">"stock purchases via Billdesk, Paytm and ICICI API Banking"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"subscription module for premium content"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"direct payment links for channel partners"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"admin dashboards for managing it all"</span><span class="pn">,</span></div>
+<div class="l">    <span class="pn">],</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">name</span><span class="pn">:</span> <span class="s">"buy-sell-trading-platform"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">metric</span><span class="pn">:</span> <span class="s">"flagship"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">built</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">      <span class="s">"bids on unlisted stock: bid management + fulfillment"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"portfolio, tradebook and sharebook"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"investor wallets with withdrawals and cashbacks"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"channel-partner incentive modules"</span><span class="pn">,</span></div>
+<div class="l">    <span class="pn">],</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">name</span><span class="pn">:</span> <span class="s">"kyc-and-investor-services"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">metric</span><span class="pn">:</span> <span class="s">"19 KYC types"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">built</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">      <span class="s">"KYC workflows across 19 verification types"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"research report sections"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"daily stock + news notification service"</span><span class="pn">,</span></div>
+<div class="l">      <span class="s">"embeddable stock-performance widgets for partner sites"</span><span class="pn">,</span></div>
+<div class="l">    <span class="pn">],</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l"><span class="pn">]</span> <span class="k">as const</span><span class="pn">;</span></div>
+            </div>
+          </div>
+
+          <div class="file" id="f-lenskart" data-name="lenskart.py" data-lang="Python" data-path="portfolio › systems › lenskart.py">
+            <div class="code">
+<div class="l"><span class="c"># Lenskart — e-commerce ML · 2021 → 2023</span></div>
+<div class="l"><span class="t">projects</span> <span class="pn">=</span> <span class="pn">{</span></div>
+<div class="l">    <span class="s">"personalized_recommendations"</span><span class="pn">:</span> <span class="pn">{</span></div>
+<div class="l">        <span class="s">"how"</span><span class="pn">:</span> <span class="pn">[</span><span class="s">"implicit matrix factorization"</span><span class="pn">, </span><span class="s">"prod2vec + meta-prod2vec"</span><span class="pn">, </span><span class="s">"image similarity"</span><span class="pn">]</span><span class="pn">,</span></div>
+<div class="l">        <span class="s">"built"</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">            <span class="s">"product recommendations + re-ranked category pages"</span><span class="pn">,</span></div>
+<div class="l">            <span class="s">"cold-start recommendations for new users"</span><span class="pn">,</span></div>
+<div class="l">            <span class="s">"realtime personalization from user interactions"</span><span class="pn">,</span></div>
+<div class="l">        <span class="pn">],</span></div>
+<div class="l">    <span class="pn">},</span></div>
+<div class="l">    <span class="s">"eyewear_computer_vision"</span><span class="pn">:</span> <span class="pn">{</span></div>
+<div class="l">        <span class="s">"how"</span><span class="pn">:</span> <span class="pn">[</span><span class="s">"face mesh"</span><span class="pn">, </span><span class="s">"xgboost"</span><span class="pn">, </span><span class="s">"lcnn edge detection"</span><span class="pn">]</span><span class="pn">,</span></div>
+<div class="l">        <span class="s">"built"</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">            <span class="s">"face-width + frame-size prediction from selfies"</span><span class="pn">,</span></div>
+<div class="l">            <span class="s">"pupil-distance measurement for bifocal lenses"</span><span class="pn">,</span></div>
+<div class="l">            <span class="s">"a photo replaces an in-store fitting"</span><span class="pn">,</span></div>
+<div class="l">        <span class="pn">],</span></div>
+<div class="l">    <span class="pn">},</span></div>
+<div class="l">    <span class="s">"search_by_look"</span><span class="pn">:</span> <span class="pn">{</span></div>
+<div class="l">        <span class="s">"how"</span><span class="pn">:</span> <span class="pn">[</span><span class="s">"object detection"</span><span class="pn">, </span><span class="s">"embeddings"</span><span class="pn">, </span><span class="s">"nlp"</span><span class="pn">]</span><span class="pn">,</span></div>
+<div class="l">        <span class="s">"built"</span><span class="pn">:</span> <span class="pn">[</span></div>
+<div class="l">            <span class="s">"upload a photo of someone wearing frames and find them"</span><span class="pn">,</span></div>
+<div class="l">            <span class="s">"multisearch refinement: brand, color, material, size"</span><span class="pn">,</span></div>
+<div class="l">            <span class="s">"auto-generated color swatches for the catalog"</span><span class="pn">,</span></div>
+<div class="l">        <span class="pn">],</span></div>
+<div class="l">    <span class="pn">},</span></div>
+<div class="l"><span class="pn">}</span></div>
+            </div>
+          </div>
+
+          <div class="file" id="f-experience" data-name="experience.jsonc" data-lang="JSON with Comments" data-path="portfolio › experience.jsonc">
+            <div class="code">
+<div class="l"><span class="pn">[</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">"when"</span><span class="pn">:</span> <span class="s">"2024 → now"</span><span class="pn">,</span> <span class="b">"role"</span><span class="pn">:</span> <span class="s">"Software Engineer"</span><span class="pn">,</span> <span class="b">"at"</span><span class="pn">:</span> <span class="s">"Morphic"</span><span class="pn">,</span>  <span class="c">// current</span></div>
+<div class="l">    <span class="b">"note"</span><span class="pn">:</span> <span class="s">"billing, generation infrastructure, multi-tenancy, the AI copilot"</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">"when"</span><span class="pn">:</span> <span class="s">"2023 → 2026"</span><span class="pn">,</span> <span class="b">"role"</span><span class="pn">:</span> <span class="s">"Backend Developer"</span><span class="pn">,</span> <span class="b">"at"</span><span class="pn">:</span> <span class="s">"UIX Labs"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">"note"</span><span class="pn">:</span> <span class="s">"software consultancy; deployed full-time to client engineering teams"</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">"when"</span><span class="pn">:</span> <span class="s">"2023 → 2024"</span><span class="pn">,</span> <span class="b">"role"</span><span class="pn">:</span> <span class="s">"Software Engineer"</span><span class="pn">,</span> <span class="b">"at"</span><span class="pn">:</span> <span class="s">"Planify Capital"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">"note"</span><span class="pn">:</span> <span class="s">"led the backend team — payments, subscriptions, KYC, the trading platform"</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">"when"</span><span class="pn">:</span> <span class="s">"2021 → 2023"</span><span class="pn">,</span> <span class="b">"role"</span><span class="pn">:</span> <span class="s">"Data Scientist I / MLE"</span><span class="pn">,</span> <span class="b">"at"</span><span class="pn">:</span> <span class="s">"Lenskart"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">"note"</span><span class="pn">:</span> <span class="s">"recommender systems + computer vision for eyewear fitting and search"</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">"when"</span><span class="pn">:</span> <span class="s">"2021"</span><span class="pn">,</span> <span class="b">"role"</span><span class="pn">:</span> <span class="s">"Associate Developer"</span><span class="pn">,</span> <span class="b">"at"</span><span class="pn">:</span> <span class="s">"Cogitate"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">"note"</span><span class="pn">:</span> <span class="s">"insurance digitalization in .NET — frontend, backend, chatbots"</span></div>
+<div class="l">  <span class="pn">},</span></div>
+<div class="l">  <span class="pn">{</span></div>
+<div class="l">    <span class="b">"when"</span><span class="pn">:</span> <span class="s">"2020 → 2021"</span><span class="pn">,</span> <span class="b">"role"</span><span class="pn">:</span> <span class="s">"Associate R&amp;D Engineer, DL"</span><span class="pn">,</span> <span class="b">"at"</span><span class="pn">:</span> <span class="s">"Sonatic AI"</span><span class="pn">,</span></div>
+<div class="l">    <span class="b">"note"</span><span class="pn">:</span> <span class="s">"NLP for hiring: LSTM search ranking, email intent, personality models"</span></div>
+<div class="l">  <span class="pn">}</span></div>
+<div class="l"><span class="pn">]</span></div>
+            </div>
+          </div>
+
+          <div class="file" id="f-stack" data-name="stack.yml" data-lang="YAML" data-path="portfolio › stack.yml">
+            <div class="code">
+<div class="l"><span class="b">backend</span><span class="pn">:</span>  <span class="pn">[</span><span class="s">typescript</span><span class="pn">,</span> <span class="s">node</span><span class="pn">,</span> <span class="s">python</span><span class="pn">,</span> <span class="s">postgresql</span><span class="pn">,</span> <span class="s">redis</span><span class="pn">,</span> <span class="s">typeorm</span><span class="pn">,</span> <span class="s">stripe</span><span class="pn">]</span></div>
+<div class="l"><span class="b">infra</span><span class="pn">:</span>    <span class="pn">[</span><span class="s">gcp</span><span class="pn">,</span> <span class="s">cloud-run</span><span class="pn">,</span> <span class="s">pubsub</span><span class="pn">,</span> <span class="s">gcs</span><span class="pn">,</span> <span class="s">temporal</span><span class="pn">,</span> <span class="s">ffmpeg</span><span class="pn">,</span> <span class="s">ci/cd</span><span class="pn">]</span></div>
+<div class="l"><span class="b">ai-data</span><span class="pn">:</span>  <span class="pn">[</span><span class="s">llm-agents</span><span class="pn">,</span> <span class="s">generative-media</span><span class="pn">,</span> <span class="s">recommenders</span><span class="pn">,</span> <span class="s">computer-vision</span><span class="pn">,</span> <span class="s">xgboost</span><span class="pn">]</span></div>
+            </div>
+          </div>
+
+          <div class="file" id="f-education" data-name="education.txt" data-lang="Plain Text" data-path="portfolio › education.txt">
+            <div class="code">
+<div class="l">2017 — 2021   B.Tech, Computer Science</div>
+<div class="l">              Birla Institute of Applied Sciences</div>
+<div class="l"> </div>
+<div class="l">paper: "Intelligent Data-Analytic Approach for Restaurant Recommendation"</div>
+            </div>
+          </div>
+
+          <div class="file" id="f-contact" data-name="contact.json" data-lang="JSON" data-path="portfolio › contact.json">
+            <div class="lens"><button id="copy-email" type="button">copy email</button> · <a href="https://github.com/nirmalkirola" target="_blank" rel="noopener">open github</a> · <a href="https://www.linkedin.com/in/nirmal-kirola/" target="_blank" rel="noopener">open linkedin</a><span class="copied" id="copy-note" hidden> · copied</span></div>
+            <div class="code">
+<div class="l"><span class="pn">{</span></div>
+<div class="l">  <span class="b">"email"</span><span class="pn">:</span>    <span class="s">"nirmalkirola@gmail.com"</span><span class="pn">,</span></div>
+<div class="l">  <span class="b">"github"</span><span class="pn">:</span>   <span class="s">"github.com/nirmalkirola"</span><span class="pn">,</span></div>
+<div class="l">  <span class="b">"linkedin"</span><span class="pn">:</span> <span class="s">"linkedin.com/in/nirmal-kirola"</span><span class="pn">,</span></div>
+<div class="l">  <span class="b">"location"</span><span class="pn">:</span> <span class="s">"Nainital, Uttarakhand, India"</span><span class="pn">,</span></div>
+<div class="l">  <span class="b">"motto"</span><span class="pn">:</span>    <span class="s">"backend by day, mountains on weekends"</span></div>
+<div class="l"><span class="pn">}</span></div>
+            </div>
+          </div>
+
+        </div>
+        <div class="minimap" id="minimap" aria-hidden="true"></div>
+        </div>
+
+        <div class="status">
+          <span class="item">⎇ main</span>
+          <span class="item" style="color:#6B7280">Nirmal Kirola, 2 months ago</span>
+          <span class="item"><span class="sync">↻</span></span>
+          <span class="item">⊘ 0 △ 0</span>
+          <span class="sp"></span>
+          <span class="item">Ln 1, Col 1</span>
+          <span class="item">Spaces: 2</span>
+          <span class="item">UTF-8</span>
+          <span class="item">LF</span>
+          <span class="item" id="st-lang">Markdown</span>
+          <span class="item">⛰ 2,084 m</span>
+          <span class="item">✓ prettier</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* Copy email (CodeLens in contact.json). */
+  const copyBtn = document.getElementById('copy-email');
+  const copyNote = document.getElementById('copy-note');
+  copyBtn.addEventListener('click', () => {
+    try {
+      navigator.clipboard.writeText('nirmalkirola@gmail.com').then(() => {
+        copyNote.hidden = false;
+        setTimeout(() => { copyNote.hidden = true; }, 1800);
+      }).catch(() => {});
+    } catch (e) { /* convenience only */ }
+  });
+
+  /* Editor shell: explorer opens files, tabs switch and close. */
+  try {
+    const files = {};
+    document.querySelectorAll('.file').forEach((el) => {
+      files[el.id.slice(2)] = el;
+    });
+    const tabsEl = document.getElementById('tabs');
+    const crumbsEl = document.getElementById('crumbs');
+    const langEl = document.getElementById('st-lang');
+    const titleEl = document.getElementById('wintitle');
+    const editorEl = document.getElementById('editor');
+    const treeButtons = document.querySelectorAll('.tree button[data-file]');
+
+    let open = ['readme', 'morphic'];
+    let active = 'readme';
+    try {
+      const saved = JSON.parse(localStorage.getItem('vsc-state') || 'null');
+      if (saved && Array.isArray(saved.open) && saved.open.every((k) => files[k]) && files[saved.active]) {
+        open = saved.open.length ? saved.open : open;
+        active = saved.active;
+      }
+    } catch (e) { /* fresh session */ }
+
+    const save = () => {
+      try { localStorage.setItem('vsc-state', JSON.stringify({ open, active })); } catch (e) { /* ok */ }
+    };
+
+    const fico = (key) => {
+      const name = files[key].dataset.name;
+      if (name.endsWith('.md')) { return '<span class="fico fi-md">M↓</span>'; }
+      if (name.endsWith('.ts')) { return '<span class="fico fi-ts">TS</span>'; }
+      if (name.endsWith('.py')) { return '<span class="fico fi-py">PY</span>'; }
+      if (name.endsWith('.yml')) { return '<span class="fico fi-yml">Y</span>'; }
+      if (name.endsWith('.txt')) { return '<span class="fico fi-txt">≡</span>'; }
+      return '<span class="fico fi-js">{}</span>';
+    };
+
+    Object.values(files).forEach((f) => {
+      f.querySelectorAll('.l').forEach((line, i) => {
+        line.style.setProperty('--i', Math.min(i, 60));
+      });
+    });
+    let lastOpened = null;
+
+    const miniEl = document.getElementById('minimap');
+    const buildMinimap = () => {
+      if (!miniEl) { return; }
+      const code = files[active].querySelector('.code');
+      miniEl.innerHTML = '<div class="code">' + code.innerHTML + '</div>';
+    };
+
+    const render = () => {
+      tabsEl.innerHTML = '';
+      open.forEach((key) => {
+        const t = document.createElement('button');
+        t.className = 'tab' + (key === active ? ' on' : '');
+        t.innerHTML = fico(key) + files[key].dataset.name + ' <span class="x" data-x="' + key + '">×</span>';
+        t.addEventListener('click', (ev) => {
+          if (ev.target.dataset && ev.target.dataset.x) { closeTab(ev.target.dataset.x); }
+          else { activate(key); }
+        });
+        tabsEl.appendChild(t);
+      });
+      Object.keys(files).forEach((k) => { files[k].classList.toggle('on', k === active); });
+      const f = files[active];
+      crumbsEl.innerHTML = f.dataset.path.split(' › ').join(' <span>›</span> ');
+      langEl.textContent = f.dataset.lang;
+      titleEl.textContent = f.dataset.name + ' — nirmal.code-workspace';
+      treeButtons.forEach((b) => { b.classList.toggle('on', b.dataset.file === active); });
+      editorEl.scrollTop = 0;
+      editorEl.scrollLeft = 0;
+      if (active !== lastOpened) {
+        const f = files[active];
+        f.classList.remove('opening');
+        void f.offsetWidth;
+        f.classList.add('opening');
+        lastOpened = active;
+      }
+      buildMinimap();
+      save();
+    };
+
+    const activate = (key) => {
+      if (!open.includes(key)) { open.push(key); }
+      active = key;
+      render();
+    };
+
+    const closeTab = (key) => {
+      const i = open.indexOf(key);
+      if (i === -1) { return; }
+      open.splice(i, 1);
+      if (!open.length) { open = ['readme']; }
+      if (active === key) { active = open[Math.max(0, i - 1)]; }
+      render();
+    };
+
+    treeButtons.forEach((b) => { b.addEventListener('click', () => { activate(b.dataset.file); }); });
+
+    document.getElementById('btn-files').addEventListener('click', () => {
+      document.getElementById('main').classList.toggle('side-open');
+    });
+
+    render();
+  } catch (e) {
+    /* without script the README stays open — the page is complete at rest */
+  }
+</script>
+
+</body>
+</html>
