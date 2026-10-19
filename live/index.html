@@ -342,7 +342,7 @@
     const left = i % 2 === 0;
     workers.push({
       id: 'worker/' + String(i + 1).padStart(2, '0'),
-      role: roles(i), x: left ? -30 - i * 14 : innerWidth + 30 + i * 14, y: 120,
+      role: roles(i), x: left ? -14 - i * 6 : innerWidth + 14 + i * 6, y: 150,
       dir: left ? 1 : -1, speed: 150 + Math.random() * 70, climb: 260,
       plan: [], busy: false, job: null, animT: Math.random() * 9, workT: 0,
       goal: 'reporting in', hiking: false,
@@ -382,6 +382,7 @@
   function assign(w, j) {
     w.busy = true; w.hiking = false; w.job = j;
     j.state = 'rendering';
+    j.el.classList.add('rendering');
     w.goal = 'render ' + j.id + ' on ' + j.provider;
     w.plan = [...pathTo(w, j.workX, j.ground), { kind: 'render', job: j, remaining: j.effort, label: 'render (' + j.provider + ')' }];
   }
@@ -392,8 +393,9 @@
   }
   function complete(w) {
     const j = w.job;
+    const alreadyDone = j.state === 'done';
     j.state = 'done'; j.el.classList.remove('rendering'); j.el.classList.add('done');
-    charge(j);
+    if (!alreadyDone) charge(j);
     w.job = null; w.busy = false;
     idle(w);
     pump();
@@ -430,6 +432,7 @@
     }
     for (let qi = 0; qi < queue.length;) {
       const j = queue[qi];
+      if (j.state !== 'queued') { queue.splice(qi, 1); continue; }
       const pool = workers.filter(w => !w.busy && w.role !== 'dispatcher' && (j.provider === 'primary' ? w.role === 'primary' : w.role === 'fallback'));
       // allow cross-provider help if the right pool is empty and job is primary
       const pick = pool.length ? pool : (j.provider === 'primary' ? workers.filter(w => !w.busy && w.role === 'fallback') : []);
@@ -666,13 +669,18 @@
 
   // never hold content hostage
   setTimeout(() => {
-    for (const j of jobs) if (j.state !== 'done') { j.state = 'done'; j.el.classList.add('done'); j.el.classList.remove('rendering'); }
+    queue.length = 0;
+    for (const j of jobs) {
+      if (j.state === 'pending' || j.state === 'queued') {
+        j.state = 'done'; j.el.classList.add('done'); j.el.classList.remove('rendering');
+      }
+    }
   }, 14000);
 
   // dispatcher takes the desk; crew reports in
   for (const w of workers) w.role === 'dispatcher' ? deskPlan(w) : idle(w);
 
-  window.__pipeline = { workers, jobs, queue, get credits() { return credits; } };
+  window.__pipeline = { workers, jobs, queue, camp, get credits() { return credits; } };
 
   /* ---------- main loop ---------- */
   let last = performance.now(), visible = true;
