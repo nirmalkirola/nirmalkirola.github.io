@@ -399,36 +399,35 @@
   const PEAK = [[0.72,0],[0.8,.95],[0.85,.7],[0.9,1],[1,0.08]];
   const stars = [];
   for (let i = 0; i < 46; i++) stars.push([Math.random(), Math.random() * 0.5, Math.random() * 7]);
-  const vill = { cabins: [], slots: [], fire: { x: 0, y: 0 } };
-  const CABIN_H = 86, ROOF_H = 24;
+  const vill = { room: {}, slots: [], fire: { x: 0, y: 0 } };
+  const WALL_H = 34;
   function buildVillage() {
     const W = camp.x1 - camp.x0;
-    const n = W >= 640 ? 3 : 2;
-    const cw = Math.min(190, Math.max(150, W * 0.2));
-    const types = ['bunk', 'kitchen', 'lounge'].slice(0, n);
-    vill.cabins = [];
-    vill.slots = [];
-    let x = camp.x0 + 12;
-    for (const type of types) {
-      const c = { type, x, w: cw, y: camp.base };
-      vill.cabins.push(c);
-      const g = camp.base;
-      if (type === 'bunk') {
-        vill.slots.push({ kind: 'sleep', x: x + cw * 0.28, y: g, busyBy: null });
-        vill.slots.push({ kind: 'sleep', x: x + cw * 0.72, y: g, busyBy: null });
-      } else if (type === 'kitchen') {
-        vill.slots.push({ kind: 'eat', x: x + cw * 0.46 - 24, y: g, busyBy: null, dir: 1, lift: 9 });
-        vill.slots.push({ kind: 'eat', x: x + cw * 0.46 + 24, y: g, busyBy: null, dir: -1, lift: 9 });
-        vill.slots.push({ kind: 'coffee', x: x + cw * 0.86 - 14, y: g, busyBy: null, dir: 1 });
-      } else {
-        vill.slots.push({ kind: 'tv', x: x + cw * 0.62 + 7, y: g, busyBy: null, dir: -1, lift: 11 });
-        vill.slots.push({ kind: 'tv', x: x + cw * 0.62 + 23, y: g, busyBy: null, dir: -1, lift: 11 });
-      }
-      x += cw + 16;
-    }
-    vill.fire.x = Math.min(x + 48, camp.x0 + W * 0.78);
+    const rx = camp.x0 + 8;
+    const rw = Math.min(W * 0.72, 600);
+    const wallTop = camp.top + 26;
+    const floorTop = wallTop + WALL_H;
+    const floorBot = camp.base;
+    vill.room = { x: rx, w: rw, wallTop, floorTop, floorBot };
+    vill.fire.x = Math.min(rx + rw + 64, camp.x1 - 70);
     vill.fire.y = camp.base;
-    for (let i = 0; i < 3; i++) vill.slots.push({ kind: 'fire', x: vill.fire.x - 22 + i * 22, y: camp.base, busyBy: null, dir: i < 1 ? 1 : -1 });
+    const slots = [];
+    // two horizontal beds along the left side
+    slots.push({ kind: 'sleep', x: rx + 64, y: floorTop + 34, busyBy: null });
+    slots.push({ kind: 'sleep', x: rx + 64, y: floorTop + 86, busyBy: null });
+    // dining table mid-room, a stool each side
+    const tx = rx + rw * 0.42, ty = floorTop + 68;
+    slots.push({ kind: 'eat', x: tx - 28, y: ty, busyBy: null, dir: 1, lift: 9 });
+    slots.push({ kind: 'eat', x: tx + 28, y: ty, busyBy: null, dir: -1, lift: 9 });
+    // coffee counter on the back wall
+    slots.push({ kind: 'coffee', x: rx + rw * 0.6, y: floorTop + 16, busyBy: null, dir: 1 });
+    // couch facing the TV on the right wall
+    slots.push({ kind: 'tv', x: rx + rw - 116, y: floorTop + 58, busyBy: null, dir: 1, lift: 11 });
+    slots.push({ kind: 'tv', x: rx + rw - 98, y: floorTop + 58, busyBy: null, dir: 1, lift: 11 });
+    // fire seats outside
+    for (let i = 0; i < 3; i++) slots.push({ kind: 'fire', x: vill.fire.x - 24 + i * 24, y: camp.base, busyBy: null, dir: i < 1 ? 1 : -1 });
+    for (const sl of slots) { const old = vill.slots.find(o => o.kind === sl.kind && !o.busyBy === false); }
+    vill.slots = slots;
   }
   function releaseSlot(w) {
     for (const sl of vill.slots) if (sl.busyBy === w) sl.busyBy = null;
@@ -837,103 +836,128 @@
   function drawVillage(t, viewTop, viewBot) {
     if (camp.top > viewBot || camp.base < viewTop) return;
     const W = camp.x1 - camp.x0;
-    // moon + stars
-    px2(camp.x1 - 70, camp.top + 18, 18, 18, '#D7DAE0');
-    px2(camp.x1 - 73, camp.top + 22, 5, 5, '#9BA0AB'); px2(camp.x1 - 62, camp.top + 28, 4, 4, '#9BA0AB');
+    const R = vill.room;
+    // sky
+    px2(camp.x1 - 66, camp.top + 10, 18, 18, '#D7DAE0');
+    px2(camp.x1 - 69, camp.top + 14, 5, 5, '#9BA0AB'); px2(camp.x1 - 58, camp.top + 20, 4, 4, '#9BA0AB');
     for (let i = 0; i < stars.length; i++) {
       const [sx, sy, sp] = stars[i];
       ctx.globalAlpha = 0.25 + 0.55 * Math.abs(Math.sin(t / 900 + sp));
-      px2(camp.x0 + sx * W, camp.top + 6 + sy * 90, 2, 2, '#D7DAE0');
+      px2(camp.x0 + sx * W, camp.top + 4 + sy * 70, 2, 2, '#D7DAE0');
     }
     ctx.globalAlpha = 1;
-    // far ridge across the back
-    ctx.fillStyle = '#15171B';
-    ctx.beginPath(); ctx.moveTo(camp.x0, camp.base);
-    for (const [rt, rh] of FAR_RIDGE) ctx.lineTo(camp.x0 + W * rt, camp.base - 36 - rh * 70);
-    ctx.lineTo(camp.x1, camp.base); ctx.closePath(); ctx.fill();
-    // the one real peak, behind the fire, with snow + flag
+    // backdrop peak + pines, outside right
     ctx.fillStyle = '#1C1F25';
     ctx.beginPath(); ctx.moveTo(camp.x0 + W * PEAK[0][0], camp.base);
-    for (const [rt, rh] of PEAK) ctx.lineTo(camp.x0 + W * rt, camp.base - rh * 128);
+    for (const [rt, rh] of PEAK) ctx.lineTo(camp.x0 + W * rt, camp.base - rh * 136);
     ctx.lineTo(camp.x1, camp.base); ctx.closePath(); ctx.fill();
-    const pkx = camp.x0 + W * 0.9, pky = camp.base - 128;
+    const pkx = camp.x0 + W * 0.9, pky = camp.base - 136;
     px2(pkx - 2, pky - 1, 4, 2, '#E8EAEE'); px2(pkx - 5, pky + 1, 10, 2, '#E8EAEE'); px2(pkx - 8, pky + 3, 16, 2, '#AEB4C0');
     px2(pkx + 2, pky - 14, 1, 13, '#9BA0AB'); px2(pkx + 3, pky - 14, 6, 4, '#C5584A');
-    // pines between fire and peak
-    for (const fx of [0.69, 0.8, 0.96]) {
+    for (const fx of [0.8, 0.97]) {
       const txp = camp.x0 + W * fx, typ = camp.base;
       px2(txp - 1, typ - 5, 2, 5, '#17191D');
       px2(txp - 4, typ - 9, 8, 4, '#20262C'); px2(txp - 3, typ - 12, 6, 3, '#20262C'); px2(txp - 1, typ - 14, 2, 2, '#20262C');
     }
-    // cabins (dollhouse cutaway: open front, warm inside)
-    for (const c of vill.cabins) {
-      const cx = c.x, cw = c.w, gy = camp.base, ty = gy - CABIN_H;
-      // interior + glow
-      px2(cx, ty, cw, CABIN_H, '#1B1E24');
-      const gl = ctx.createRadialGradient(cx + cw / 2, ty + 34, 6, cx + cw / 2, ty + 34, cw * 0.62);
-      gl.addColorStop(0, 'rgba(226,163,86,0.16)'); gl.addColorStop(1, 'rgba(226,163,86,0)');
-      ctx.fillStyle = gl; ctx.fillRect(cx, ty, cw, CABIN_H);
-      // back-wall window with light
-      px2(cx + cw - 34, ty + 14, 18, 14, '#2A2F37'); px2(cx + cw - 32, ty + 16, 14, 10, '#E2A35633');
-      px2(cx + cw - 25, ty + 16, 2, 10, '#2A2F37'); px2(cx + cw - 32, ty + 20, 14, 2, '#2A2F37');
-      // walls + floor
-      px2(cx - 3, ty, 3, CABIN_H, '#262B31'); px2(cx + cw, ty, 3, CABIN_H, '#262B31');
-      px2(cx - 3, gy - 3, cw + 6, 3, '#262B31');
-      px2(cx, gy - 5, cw, 2, '#30363D');
-      // roof
-      ctx.fillStyle = '#30363D';
-      ctx.beginPath(); ctx.moveTo(cx - 10, ty); ctx.lineTo(cx + cw / 2, ty - ROOF_H); ctx.lineTo(cx + cw + 10, ty); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#3A4149';
-      ctx.beginPath(); ctx.moveTo(cx - 10, ty); ctx.lineTo(cx + cw / 2, ty - ROOF_H); ctx.lineTo(cx + cw / 2 + 10, ty - ROOF_H + 7); ctx.lineTo(cx, ty); ctx.closePath(); ctx.fill();
-      px2(cx + cw / 2 - 2, ty - ROOF_H - 1, cw * 0 + 4 + cw / 2 + 12 > 0 ? 4 : 4, 3, '#262B31');
-      // chimney on the first cabin
-      if (c === vill.cabins[0]) {
-        px2(cx + cw - 26, ty - ROOF_H + 2, 8, 14, '#262B31'); px2(cx + cw - 25, ty - ROOF_H + 1, 6, 2, '#30363D');
-        if (Math.random() < 0.08) smoke.push({ x: cx + cw - 22, y: ty - ROOF_H - 2, vy: -11, life: 2 });
-      }
-      // furniture
-      if (c.type === 'bunk') {
-        for (const bx of [cx + cw * 0.28, cx + cw * 0.72]) {
-          px2(bx - 17, gy - 14, 34, 11, '#4A3620');          // frame
-          px2(bx - 15, gy - 17, 30, 5, '#C3C8D2');           // mattress
-          px2(bx - 15, gy - 18, 8, 4, '#ECEEF2');            // pillow
-          px2(bx - 17, gy - 4, 3, 4, '#33261A'); px2(bx + 14, gy - 4, 3, 4, '#33261A');
-        }
-        px2(cx + cw * 0.5 - 10, gy - 4, 20, 2, '#5B4328');   // rug
-        px2(cx + 8, gy - 30, 3, 26, '#4A3620'); px2(cx + 4, gy - 36, 11, 7, '#E2A356'); // lamp
-      } else if (c.type === 'kitchen') {
-        px2(cx + cw * 0.46 - 16, gy - 20, 32, 4, '#5B4328'); // table top
-        px2(cx + cw * 0.46 - 13, gy - 16, 3, 14, '#4A3620'); px2(cx + cw * 0.46 + 10, gy - 16, 3, 14, '#4A3620');
-        px2(cx + cw * 0.46 - 7, gy - 24, 6, 3, '#C97F1E');   // bowl
-        px2(cx + cw * 0.46 + 2, gy - 23, 5, 2, '#ECEEF2');   // plate
-        for (const sx of [cx + cw * 0.46 - 24, cx + cw * 0.46 + 24]) {   // stools
-          px2(sx - 6, gy - 11, 12, 3, '#5B4328');
-          px2(sx - 5, gy - 8, 2, 8, '#4A3620'); px2(sx + 3, gy - 8, 2, 8, '#4A3620');
-        }
-        px2(cx + cw * 0.78, gy - 34, 16, 32, '#C3C8D2');     // fridge
-        px2(cx + cw * 0.78 + 2, gy - 30, 12, 1, '#7E8490'); px2(cx + cw * 0.78 + 11, gy - 26, 2, 4, '#7E8490');
-        px2(cx + cw * 0.86 - 8, gy - 22, 20, 4, '#30363D');  // counter
-        px2(cx + cw * 0.86 - 8, gy - 18, 20, 16, '#262B31');
-        px2(cx + cw * 0.86 + 2, gy - 30, 9, 8, '#15161A');   // coffee machine
-        px2(cx + cw * 0.86 + 4, gy - 27, 3, 3, '#C5584A');
-      } else {
-        px2(cx + cw * 0.62 - 4, gy - 16, 34, 7, '#8A5230');  // couch seat
-        px2(cx + cw * 0.62 - 4, gy - 26, 34, 10, '#A3663C'); // couch back
-        px2(cx + cw * 0.62 - 8, gy - 22, 5, 13, '#8A5230'); px2(cx + cw * 0.62 + 29, gy - 22, 5, 13, '#8A5230');
-        px2(cx + cw * 0.2 - 2, gy - 12, 24, 3, '#4A3620');   // tv stand
-        px2(cx + cw * 0.2, gy - 30, 20, 18, '#15161A');      // tv
-        const sc = Math.floor(t / 150);
-        const cols = ['#7FA7D4', '#E2A356', '#D7DAE0', '#30363D', '#C5584A'];
-        for (let i = 0; i < 6; i++) px2(cx + cw * 0.2 + 2 + (i % 3) * 5, gy - 28 + Math.floor(i / 3) * 7, 4, 6, cols[(sc + i * 2) % cols.length]);
-        px2(cx + cw * 0.92, gy - 18, 4, 14, '#20662C' === '' ? '' : '#2E4A33'); // plant
-        px2(cx + cw * 0.92 - 3, gy - 24, 10, 8, '#365A3E');
-        px2(cx + cw * 0.92 - 1, gy - 5, 6, 5, '#C97F1E');
-      }
-      // name plate
-      ctx.fillStyle = '#555B66'; ctx.font = '600 9px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
-      ctx.fillText({ bunk: 'BUNKHOUSE', kitchen: 'KITCHEN', lounge: 'LOUNGE' }[c.type], cx + cw / 2, ty - ROOF_H - 6);
+    // ---- the house, Kairosoft 3/4 top-down ----
+    // outer walls
+    px2(R.x - 6, R.wallTop - 6, R.w + 12, 6, '#262B31');                     // top edge
+    px2(R.x - 6, R.wallTop, 6, R.floorBot - R.wallTop, '#262B31');           // left wall edge
+    px2(R.x + R.w, R.wallTop, 6, R.floorBot - R.wallTop, '#262B31');         // right wall edge
+    // back wall band
+    const grad = ctx.createLinearGradient(0, R.wallTop, 0, R.floorTop);
+    grad.addColorStop(0, '#2B2420'); grad.addColorStop(1, '#3A3029');
+    ctx.fillStyle = grad; ctx.fillRect(R.x, R.wallTop, R.w, WALL_H);
+    // windows on the back wall (night outside, warm frames)
+    for (const wxf of [0.12, 0.34, 0.78]) {
+      const wx = R.x + R.w * wxf;
+      px2(wx - 12, R.wallTop + 7, 24, 18, '#262B31');
+      px2(wx - 10, R.wallTop + 9, 20, 14, '#141A22');
+      px2(wx - 10, R.wallTop + 9, 20, 2, '#E2A35622');
+      px2(wx - 1, R.wallTop + 9, 2, 14, '#262B31'); px2(wx - 10, R.wallTop + 15, 20, 2, '#262B31');
+      px2(wx - 8, R.wallTop + 11, 2, 2, '#D7DAE0');  // a star through the glass
     }
-    // campfire
+    // wall poster
+    px2(R.x + R.w * 0.5 - 7, R.wallTop + 8, 14, 16, '#4A3620');
+    px2(R.x + R.w * 0.5 - 5, R.wallTop + 10, 10, 12, '#7FA7D4');
+    px2(R.x + R.w * 0.5 - 3, R.wallTop + 14, 6, 4, '#E2A356');
+    // wooden plank floor
+    ctx.fillStyle = '#39302配'.length ? '#393027' : '#393027';
+    ctx.fillRect(R.x, R.floorTop, R.w, R.floorBot - R.floorTop);
+    for (let y = R.floorTop + 7; y < R.floorBot; y += 7) px2(R.x, y, R.w, 1, '#2E2720');
+    for (let x = R.x + 34; x < R.x + R.w; x += 68) {
+      const off = (Math.floor((x - R.x) / 68) % 2) * 3.5;
+      for (let y = R.floorTop + off * 2; y < R.floorBot; y += 14) px2(x, y, 1, 7, '#2E2720');
+    }
+    // warm room light
+    const gl = ctx.createRadialGradient(R.x + R.w / 2, R.floorTop + 30, 10, R.x + R.w / 2, R.floorTop + 30, R.w * 0.6);
+    gl.addColorStop(0, 'rgba(226,163,86,0.13)'); gl.addColorStop(1, 'rgba(226,163,86,0)');
+    ctx.fillStyle = gl; ctx.fillRect(R.x, R.wallTop, R.w, R.floorBot - R.wallTop);
+    // rug under the table
+    const tx = R.x + R.w * 0.42, ty = R.floorTop + 68;
+    px2(tx - 44, ty - 14, 88, 26, '#4A3A2A'); px2(tx - 40, ty - 10, 80, 18, '#5B4834');
+    // against the back wall: fridge, coffee counter, bookshelf (drawn before movers)
+    const fx0 = R.x + R.w * 0.68;
+    px2(fx0, R.floorTop - 22, 18, 34, '#C3C8D2'); px2(fx0 + 2, R.floorTop - 10, 14, 1, '#7E8490'); px2(fx0 + 14, R.floorTop - 18, 2, 5, '#7E8490');
+    const cx0 = R.x + R.w * 0.56;
+    px2(cx0 - 14, R.floorTop - 10, 44, 14, '#30363D'); px2(cx0 - 14, R.floorTop - 12, 44, 3, '#3A4149');
+    px2(cx0 + 14, R.floorTop - 22, 10, 10, '#15161A'); px2(cx0 + 16, R.floorTop - 18, 3, 3, '#C5584A');
+    px2(cx0 - 10, R.floorTop - 16, 5, 4, '#ECEEF2'); px2(cx0 - 3, R.floorTop - 16, 5, 4, '#8A5B35');  // mugs
+    const bs = R.x + R.w * 0.88;
+    px2(bs - 10, R.floorTop - 26, 24, 38, '#4A3620');
+    for (let r = 0; r < 3; r++) { px2(bs - 8, R.floorTop - 21 + r * 11, 20, 1, '#33261A'); px2(bs - 7 + (r % 2) * 3, R.floorTop - 29 + (r + 1) * 11, 5, 7, ['#C5584A', '#7FA7D4', '#E2A356'][r]); px2(bs + (r % 3) * 4, R.floorTop - 29 + (r + 1) * 11, 4, 7, '#9BA0AB'); }
+  }
+
+  function drawVillageFront(t, viewTop, viewBot) {
+    if (camp.top > viewBot || camp.base < viewTop) return;
+    const R = vill.room;
+    const tx = R.x + R.w * 0.42, ty = R.floorTop + 68;
+    const items = [];
+    // beds (horizontal, headboard left)
+    for (const by of [R.floorTop + 34, R.floorTop + 86]) {
+      items.push({ y: by, draw: () => {
+        px2(R.x + 28, by - 16, 72, 20, '#4A3620');
+        px2(R.x + 30, by - 14, 68, 14, '#C3C8D2');
+        px2(R.x + 31, by - 13, 14, 12, '#ECEEF2');
+        px2(R.x + 52, by - 14, 46, 14, '#7FA7D4'); px2(R.x + 52, by - 14, 46, 3, '#5C83AE');
+        px2(R.x + 26, by - 18, 4, 22, '#33261A');
+      }});
+    }
+    // dining table + stools
+    items.push({ y: ty + 2, draw: () => {
+      px2(tx - 24, ty - 22, 48, 16, '#5B4328'); px2(tx - 24, ty - 24, 48, 4, '#6B5436');
+      px2(tx - 21, ty - 6, 4, 8, '#4A3620'); px2(tx + 17, ty - 6, 4, 8, '#4A3620');
+      px2(tx - 10, ty - 27, 8, 4, '#C97F1E'); px2(tx + 3, ty - 26, 7, 3, '#ECEEF2');
+      for (const sx of [tx - 28, tx + 28]) { px2(sx - 6, ty - 10, 12, 4, '#5B4328'); px2(sx - 5, ty - 6, 2, 7, '#4A3620'); px2(sx + 3, ty - 6, 2, 7, '#4A3620'); }
+    }});
+    // couch + tv on the right wall
+    const cy = R.floorTop + 58, cxp = R.x + R.w - 108;
+    items.push({ y: cy + 4, draw: () => {
+      px2(cxp - 12, cy - 24, 10, 28, '#A3663C');
+      px2(cxp - 4, cy - 18, 40, 16, '#8A5230'); px2(cxp - 4, cy - 22, 40, 6, '#A3663C');
+      px2(cxp - 4, cy + 2, 40, 3, '#6E4226');
+    }});
+    items.push({ y: cy + 10, draw: () => {
+      const tvx = R.x + R.w - 34;
+      px2(tvx - 4, cy - 2, 26, 4, '#4A3620');
+      px2(tvx, cy - 26, 20, 24, '#15161A');
+      const sc = Math.floor(t / 150);
+      const cols = ['#7FA7D4', '#E2A356', '#D7DAE0', '#30363D', '#C5584A'];
+      for (let i = 0; i < 6; i++) px2(tvx + 2 + (i % 2) * 8, cy - 23 + Math.floor(i / 2) * 7, 7, 6, cols[(sc + i * 2) % cols.length]);
+      ctx.globalAlpha = 0.07 + 0.04 * Math.sin(t / 300); px2(tvx - 26, cy - 30, 26, 32, '#7FA7D4'); ctx.globalAlpha = 1;
+    }});
+    // plant front-left corner
+    items.push({ y: R.floorBot - 2, draw: () => {
+      px2(R.x + 12, R.floorBot - 12, 10, 8, '#C97F1E');
+      px2(R.x + 9, R.floorBot - 24, 16, 12, '#2E4A33'); px2(R.x + 13, R.floorBot - 28, 8, 6, '#365A3E');
+    }});
+    // villagers join the painter
+    for (const w of workers) {
+      if (w.y > camp.top) items.push({ y: w.y, draw: () => drawWorker(w) });
+    }
+    items.sort((a, b) => a.y - b.y);
+    for (const it of items) it.draw();
+    // campfire outside
     const fx = vill.fire.x, fy = vill.fire.y - 1;
     const glow = ctx.createRadialGradient(fx, fy - 4, 2, fx, fy - 4, 34);
     glow.addColorStop(0, 'rgba(226,163,86,0.22)'); glow.addColorStop(1, 'rgba(226,163,86,0)');
@@ -944,9 +968,8 @@
     px2(fx - 4, fy - 9 - fl, 8, 5, '#C5584A'); px2(fx - 3, fy - 12 + fl, 6, 6, '#E2A356'); px2(fx - 1, fy - 13 + fl, 3, 4, '#F2D08A');
     if (Math.random() < 0.3) embers.push({ x: fx + (Math.random() - 0.5) * 6, y: fy - 12, vx: (Math.random() - 0.5) * 10, vy: -16 - Math.random() * 18, life: 0.7 + Math.random() * 0.5 });
     if (Math.random() < 0.1) smoke.push({ x: fx + (Math.random() - 0.5) * 4, y: fy - 16, vy: -13 - Math.random() * 7, life: 1.8 });
-    // sign
     ctx.fillStyle = '#555B66'; ctx.font = '600 10px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
-    ctx.fillText('WORKER VILLAGE · 2,084 m', camp.x0 + 4, camp.top + 14);
+    ctx.fillText('WORKER VILLAGE · 2,084 m', camp.x0 + 2, camp.top + 10);
   }
 
   /* ---------- click-me arrow ---------- */
@@ -1045,7 +1068,7 @@
   }, 5000);
 
   for (const w of workers) w.role === 'dispatcher' ? deskPlan(w) : idle(w);
-  window.__pipeline = { workers, jobs, queue, camp, version: 7, get credits() { return credits; } };
+  window.__pipeline = { workers, jobs, queue, camp, version: 8, get credits() { return credits; } };
 
   /* ---------- main loop ---------- */
   let last = performance.now(), visible = true;
@@ -1136,6 +1159,13 @@
       ctx.fillText('+' + c.amt + 'cr', c.x, c.y);
     }
     ctx.globalAlpha = 1;
+
+    for (const w of workers) {
+      if (w.y < viewTop - 20 || w.y > viewBot + 20) continue;
+      if (w.y > camp.top) continue; // villagers are painter-sorted with the furniture
+      drawWorker(w);
+    }
+    drawVillageFront(t, viewTop, viewBot);
     for (let i = zzz.length - 1; i >= 0; i--) {
       const z = zzz[i]; z.life -= dt; z.y += z.vy * dt;
       if (z.life <= 0) { zzz.splice(i, 1); continue; }
@@ -1143,12 +1173,7 @@
       ctx.fillStyle = '#9BA0AB'; ctx.font = '700 10px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
       ctx.fillText('z', z.x, z.y);
     }
-    ctx.globalAlpha = 1;
 
-    for (const w of workers) {
-      if (w.y < viewTop - 20 || w.y > viewBot + 20) continue;
-      drawWorker(w);
-    }
 
     if (selected) {
       selT = Math.min(1, selT + dt * 5);
