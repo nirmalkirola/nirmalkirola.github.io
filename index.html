@@ -417,16 +417,16 @@
         vill.slots.push({ kind: 'sleep', x: x + cw * 0.28, y: g, busyBy: null });
         vill.slots.push({ kind: 'sleep', x: x + cw * 0.72, y: g, busyBy: null });
       } else if (type === 'kitchen') {
-        vill.slots.push({ kind: 'eat', x: x + cw * 0.3, y: g, busyBy: null, dir: 1 });
-        vill.slots.push({ kind: 'eat', x: x + cw * 0.62, y: g, busyBy: null, dir: -1 });
-        vill.slots.push({ kind: 'coffee', x: x + cw * 0.86, y: g, busyBy: null, dir: 1 });
+        vill.slots.push({ kind: 'eat', x: x + cw * 0.46 - 24, y: g, busyBy: null, dir: 1, lift: 9 });
+        vill.slots.push({ kind: 'eat', x: x + cw * 0.46 + 24, y: g, busyBy: null, dir: -1, lift: 9 });
+        vill.slots.push({ kind: 'coffee', x: x + cw * 0.86 - 14, y: g, busyBy: null, dir: 1 });
       } else {
-        vill.slots.push({ kind: 'tv', x: x + cw * 0.56, y: g, busyBy: null, dir: -1 });
-        vill.slots.push({ kind: 'tv', x: x + cw * 0.74, y: g, busyBy: null, dir: -1 });
+        vill.slots.push({ kind: 'tv', x: x + cw * 0.62 + 7, y: g, busyBy: null, dir: -1, lift: 11 });
+        vill.slots.push({ kind: 'tv', x: x + cw * 0.62 + 23, y: g, busyBy: null, dir: -1, lift: 11 });
       }
       x += cw + 16;
     }
-    vill.fire.x = Math.min(x + 34, camp.x0 + W * 0.74);
+    vill.fire.x = Math.min(x + 48, camp.x0 + W * 0.78);
     vill.fire.y = camp.base;
     for (let i = 0; i < 3; i++) vill.slots.push({ kind: 'fire', x: vill.fire.x - 22 + i * 22, y: camp.base, busyBy: null, dir: i < 1 ? 1 : -1 });
   }
@@ -790,7 +790,27 @@
       ctx.fillStyle = '#5C83AE'; ctx.fillRect(Math.round(w.x) - 14, Math.round(w.y) - 16, 26, 2);
       return;
     }
-    const spr = SPRITES[variant + '|' + poseFor(w) + '|' + w.facial];
+    const pose = poseFor(w);
+    if (pose === 'SIT') {
+      const sl = st0 && st0.slot;
+      const lift = (sl && sl.lift) || 0;
+      const spr0 = SPRITES[variant + '|IDLE|' + w.facial];
+      if (!spr0) return;
+      const x = Math.round(w.x), y = Math.round(w.y) - lift;
+      ctx.globalAlpha = 0.28; ctx.fillStyle = '#000';
+      ctx.fillRect(x - 10, Math.round(w.y) - 2, 20, 3); ctx.globalAlpha = 1;
+      ctx.save();
+      ctx.translate(x, y);
+      if (w.dir < 0) ctx.scale(-1, 1);
+      ctx.drawImage(spr0, 0, 0, 16, 18, -16, -34, 32, 36);   // head + torso, lowered
+      ctx.fillStyle = '#4E6E9E'; ctx.fillRect(-6, -8, 16, 5); // folded legs forward
+      ctx.fillStyle = '#3C567E'; ctx.fillRect(6, -8, 4, 5);
+      ctx.fillStyle = '#262930'; ctx.fillRect(10, -6, 5, 5);  // boots
+      ctx.restore();
+      if (st0 && st0.what === 'eat' && Math.random() < 0.02) dust.push({ x: w.x + w.dir * 6, y: w.y - 24, vx: 0, vy: 8, life: 0.3, c: '#C97F1E' });
+      return;
+    }
+    const spr = SPRITES[variant + '|' + pose + '|' + w.facial];
     if (!spr) return;
     const x = Math.round(w.x), y = Math.round(w.y);
     ctx.globalAlpha = 0.28; ctx.fillStyle = '#000';
@@ -886,6 +906,10 @@
         px2(cx + cw * 0.46 - 13, gy - 16, 3, 14, '#4A3620'); px2(cx + cw * 0.46 + 10, gy - 16, 3, 14, '#4A3620');
         px2(cx + cw * 0.46 - 7, gy - 24, 6, 3, '#C97F1E');   // bowl
         px2(cx + cw * 0.46 + 2, gy - 23, 5, 2, '#ECEEF2');   // plate
+        for (const sx of [cx + cw * 0.46 - 24, cx + cw * 0.46 + 24]) {   // stools
+          px2(sx - 6, gy - 11, 12, 3, '#5B4328');
+          px2(sx - 5, gy - 8, 2, 8, '#4A3620'); px2(sx + 3, gy - 8, 2, 8, '#4A3620');
+        }
         px2(cx + cw * 0.78, gy - 34, 16, 32, '#C3C8D2');     // fridge
         px2(cx + cw * 0.78 + 2, gy - 30, 12, 1, '#7E8490'); px2(cx + cw * 0.78 + 11, gy - 26, 2, 4, '#7E8490');
         px2(cx + cw * 0.86 - 8, gy - 22, 20, 4, '#30363D');  // counter
@@ -1021,7 +1045,7 @@
   }, 5000);
 
   for (const w of workers) w.role === 'dispatcher' ? deskPlan(w) : idle(w);
-  window.__pipeline = { workers, jobs, queue, camp, version: 6, get credits() { return credits; } };
+  window.__pipeline = { workers, jobs, queue, camp, version: 7, get credits() { return credits; } };
 
   /* ---------- main loop ---------- */
   let last = performance.now(), visible = true;
