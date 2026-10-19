@@ -425,7 +425,7 @@
       role: roles(i), x: left ? -14 - i * 6 : innerWidth + 14 + i * 6, y: 150,
       dir: left ? 1 : -1, speed: 155 + Math.random() * 70, climb: 270,
       plan: [], busy: false, job: null, animT: Math.random() * 9, workT: 0,
-      goal: 'reporting in', hiking: false, tools: false,
+      goal: 'reporting in', hiking: false, tools: false, facial: i % 3,
     });
   }
 
@@ -491,7 +491,10 @@
     j.state = 'done'; j.repair = false;
     j.el.classList.remove('rendering'); j.el.classList.add('done');
     if (!alreadyDone) charge(j);
-    if (wasRepair) toast('<b>fixed</b> · ' + j.id + ' redeployed on fallback', 'blue');
+    if (wasRepair) {
+      toast('<b>fixed</b> · ' + j.id + ' redeployed on fallback', 'blue');
+      for (let i = 0; i < 12; i++) dust.push({ x: j.workX + (Math.random() - 0.5) * 60, y: j.ground - 10 - Math.random() * 20, vx: (Math.random() - 0.5) * 50, vy: -40 - Math.random() * 40, life: 0.6 + Math.random() * 0.4, c: '#7FA7D4' });
+    }
     w.job = null; w.busy = false; w.tools = false;
     idle(w);
     pump();
@@ -613,71 +616,158 @@
     }
   }
 
-  /* ---------- detailed pixel sprites ---------- */
-  const SKIN = '#E6BE93', SKIN_SH = '#C79B74', BOOT = '#23252B', PANT = '#383C45', HAIR = '#2B2520';
-  const SHIRT = { primary: '#E2A356', fallback: '#7FA7D4', dispatcher: '#C9CDD6' };
-  const SHIRT_SH = { primary: '#B47C3C', fallback: '#5C83AE', dispatcher: '#9BA0AB' };
-  function drawWorker(w) {
-    const s = 2;
+  /* ---------- pixel-map sprites (outlined, pre-rendered) ---------- */
+  const BASE = [
+    '....OOOOOO......',
+    '...OYYHHHHO.....',
+    '..OYHHHHHHHO....',
+    '..OhhhhhhhhhO...',
+    '.OhhhhhhhhhhhO..',
+    '.OOOOOOOOOOOOO..',
+    '..OASSSSSSSAO...',
+    '.OSOSSSSSSSOSO..',
+    '..OSESSSESSO....',
+    '..OSsSSSSsSO....',
+    '..OSSSSSSSSO....',
+    '..OssssssssO....',
+    '...OWWWWWWO.....',
+    '..OWWVVVVVWWO...',
+    '.OWWOVVvVVOWWO..',
+    '.OWwOVVvVVOwWO..',
+    '.OWwOVVVVVOwWO..',
+    '.OSsOvVVVvOsSO..',
+    '..OOJJJJJJJOO...',
+    '...OJJJOJJJO....',
+    '...OJjJOJjJO....',
+    '...OJJJOJJJO....',
+    '...OKKKOKKKO....',
+    '...OOOO.OOOO....',
+  ];
+  const LEGS_A = [[19,0,'..OJJJO..OJJO...'],[20,0,'..OJjJO..OjJO...'],[21,0,'..OJJJO..OJJO...'],[22,0,'..OKKKO..OKKO...'],[23,0,'..OOOOO..OOOO...']];
+  const LEGS_B = [[19,0,'...OJJO..OJJJO..'],[20,0,'...OJjO..OJjJO..'],[21,0,'...OJJO..OJJJO..'],[22,0,'...OKKO..OKKKO..'],[23,0,'...OOOO..OOOOO..']];
+  const CLEAR_R = [[14,10,'....'],[15,10,'....'],[16,10,'....'],[17,10,'....']];
+  const WORK_A_P = [...CLEAR_R,[6,12,'RrR'],[7,13,'R'],[8,13,'R'],[9,12,'SO'],[10,12,'WO'],[11,12,'WO'],[12,12,'WO'],[13,12,'WO']];
+  const WORK_B_P = [...CLEAR_R,[10,13,'RrR'],[11,14,'R'],[12,13,'SO'],[13,12,'WO'],[14,12,'WO']];
+  const INSPECT_P = [...CLEAR_R,[7,12,'OGO'],[8,12,'GGO'],[9,13,'rO'],[10,12,'WO'],[11,12,'WO'],[12,12,'WO'],[13,12,'WO']];
+  const READ_P = [[15,1,'....'],[16,1,'....'],[17,1,'....'],[15,10,'....'],[16,10,'....'],[17,10,'....'],
+    [13,4,'OPPPPPPO'],[14,4,'OPppppPO'],[15,4,'OPPPPPPO'],[16,4,'OPppppPO'],[17,4,'OOOOOOOO'],
+    [14,3,'S'],[14,12,'S']];
+  const CARRY_P = [[16,12,'S'],[17,12,'OttO'],[18,12,'TTTT'],[19,12,'TuuT'],[20,12,'OOOO'],
+    [13,0,'PP'],[14,0,'Pp'],[15,0,'Pp'],[16,0,'PP']];
+  const SIT_P = [[18,0,'..OOJJJJJJJJO...'],[19,0,'...OJJJJJJJJOO..'],[20,0,'...OJJJJJOKKO...'],[21,0,'....OOOOOOOOO...'],[22,0,'................'],[23,0,'................'],
+    [15,12,'SM'],[16,13,'M']];
+  const MUSTACHE_P = [[10,5,'AAAA']];
+  const BEARD_P = [[10,4,'A'],[10,9,'A'],[11,3,'ABBBBBBA'],[12,6,'BB']];
+  const HIKER_P = [[0,0,'................'],[1,0,'................'],[2,0,'.....OWWO.......'],
+    [3,0,'...ODDDDDDDO....'],[4,0,'...ODdDdDdDO....'],[5,0,'...OOOOOOOOO....'],
+    [13,0,'N'],[14,0,'Nn'],[15,0,'Nn'],[16,0,'N']];
+  const CLIP_P = [[15,0,'PP'],[16,0,'Pp']];
+
+  const COMMON = {
+    O: '#15161A', E: '#15161A', A: '#2B2017', B: '#8A5A36',
+    S: '#F0C090', s: '#D29A6A',
+    W: '#ECEEF2', w: '#C3C8D2',
+    J: '#4E6E9E', j: '#3C567E', K: '#262930',
+    M: '#9BA0AB', P: '#ECEEF2', p: '#C3C8D2',
+    R: '#AEB4C0', r: '#7E8490', G: '#9FC4E8',
+    T: '#C5584A', u: '#93392E', t: '#AEB4C0',
+    D: '#C5584A', d: '#93392E', N: '#7A5230', n: '#5B3D24',
+  };
+  const VARIANT_PAL = {
+    primary:    { Y: '#F6C96A', H: '#F0A832', h: '#C97F1E', V: '#E2A356', v: '#B47C3C' },
+    fallback:   { Y: '#F6C96A', H: '#F0A832', h: '#C97F1E', V: '#7FA7D4', v: '#5C83AE' },
+    dispatcher: { Y: '#FFFFFF', H: '#ECEEF2', h: '#BFC4CE', V: '#AEB4C0', v: '#8A8F99' },
+    hiker:      { Y: '#F6C96A', H: '#F0A832', h: '#C97F1E', V: '#E2A356', v: '#B47C3C' },
+  };
+  const POSES = {
+    IDLE: [], WALK_A: LEGS_A, WALK_B: LEGS_B,
+    WORK_A: WORK_A_P, WORK_B: WORK_B_P,
+    INSPECT: INSPECT_P, READ: READ_P,
+    CARRY_A: [...LEGS_A, ...CARRY_P], CARRY_B: [...LEGS_B, ...CARRY_P],
+    SIT: SIT_P,
+  };
+  const FACIAL = [[], MUSTACHE_P, BEARD_P];
+
+  function applyPatches(rows, patches) {
+    const out = rows.map(r => (r + '................').slice(0, 16));
+    for (const [ri, ci, str] of patches) {
+      out[ri] = out[ri].slice(0, ci) + str + out[ri].slice(ci + str.length);
+      out[ri] = (out[ri] + '................').slice(0, 16);
+    }
+    return out;
+  }
+  function renderMap(rows, pal) {
+    const c = document.createElement('canvas');
+    c.width = 16; c.height = 24;
+    const g = c.getContext('2d');
+    for (let y = 0; y < rows.length; y++) {
+      for (let x = 0; x < 16; x++) {
+        const ch = rows[y][x];
+        if (!ch || ch === '.') continue;
+        g.fillStyle = pal[ch] || '#FF00FF';
+        g.fillRect(x, y, 1, 1);
+      }
+    }
+    return c;
+  }
+  const SPRITES = {};
+  for (const variant of Object.keys(VARIANT_PAL)) {
+    const pal = { ...COMMON, ...VARIANT_PAL[variant] };
+    for (const pose of Object.keys(POSES)) {
+      for (let f = 0; f < FACIAL.length; f++) {
+        let rows = applyPatches(BASE, POSES[pose]);
+        rows = applyPatches(rows, FACIAL[f]);
+        if (variant === 'hiker') rows = applyPatches(rows, HIKER_P);
+        if (variant === 'dispatcher' && (pose === 'IDLE' || pose === 'WALK_A' || pose === 'WALK_B')) rows = applyPatches(rows, CLIP_P);
+        SPRITES[variant + '|' + pose + '|' + f] = renderMap(rows, pal);
+      }
+    }
+  }
+  const TOOLBOX_GROUND = (() => {
+    const rows = ['...OttO...', '..OTTTTO..', '..OTuuTO..', '..OOOOOO..'];
+    const c = document.createElement('canvas');
+    c.width = 10; c.height = 4;
+    const g = c.getContext('2d');
+    for (let y = 0; y < rows.length; y++) for (let x = 0; x < 10; x++) {
+      const ch = rows[y][x];
+      if (ch === '.') continue;
+      g.fillStyle = COMMON[ch] || '#FF00FF';
+      g.fillRect(x, y, 1, 1);
+    }
+    return c;
+  })();
+
+  function poseFor(w) {
     const st = w.plan[0];
-    const moving = st && (st.kind === 'goto' || st.kind === 'hike' || st.kind === 'climbTo');
-    const working = st && st.kind === 'render';
-    const inspecting = st && st.kind === 'inspect';
-    const reading = st && st.kind === 'readlogs';
-    const sitting = st && st.kind === 'sit';
-    const ph = Math.floor(w.animT * (moving ? 9 : 2)) % 2;
-    ctx.save();
-    ctx.translate(Math.round(w.x), Math.round(w.y));
-    // shadow
+    const ph = Math.floor(w.animT * 8) % 2;
+    const wk = Math.floor(w.animT * 6) % 2;
+    if (st) {
+      if (st.kind === 'sit') return 'SIT';
+      if (st.kind === 'render') return wk ? 'WORK_A' : 'WORK_B';
+      if (st.kind === 'inspect') return 'INSPECT';
+      if (st.kind === 'readlogs') return 'READ';
+      const moving = st.kind === 'goto' || st.kind === 'hike' || st.kind === 'climbTo';
+      if (moving && w.tools) return ph ? 'CARRY_A' : 'CARRY_B';
+      if (moving) return ph ? 'WALK_A' : 'WALK_B';
+    }
+    return w.tools ? 'CARRY_A' : 'IDLE';
+  }
+  function drawWorker(w) {
+    const variant = w.hiking ? 'hiker' : w.role;
+    const spr = SPRITES[variant + '|' + poseFor(w) + '|' + w.facial];
+    if (!spr) return;
+    const x = Math.round(w.x), y = Math.round(w.y);
     ctx.globalAlpha = 0.28; ctx.fillStyle = '#000';
-    ctx.fillRect(-10, -2, 20, 3); ctx.globalAlpha = 1;
+    ctx.fillRect(x - 11, y - 2, 22, 3); ctx.globalAlpha = 1;
+    ctx.save();
+    ctx.translate(x, y);
     if (w.dir < 0) ctx.scale(-1, 1);
-    const P = (px, py, pw, phh, c) => { ctx.fillStyle = c; ctx.fillRect(px * s, py * s, pw * s, phh * s); };
-
-    if (sitting) {
-      P(-4, -8, 8, 4, SHIRT[w.role]); P(2, -8, 2, 4, SHIRT_SH[w.role]);
-      P(-4, -4, 8, 2, PANT); P(-5, -2, 3, 2, BOOT); P(3, -2, 3, 2, BOOT);
-      P(-2, -12, 5, 4, SKIN); P(2, -12, 1, 4, SKIN_SH);
-      P(-3, -14, 7, 2, '#C5584A'); P(0, -15, 2, 1, '#E8EAEE'); // beanie + pom
-      P(4, -7, 2, 2, '#8A5B35'); // mug
-      ctx.restore(); return;
-    }
-
-    // legs + boots
-    if (moving) {
-      P(-3, -6, 2, 4, PANT); P(ph ? 1 : 2, -6, 2, 4, PANT);
-      P(-4, -2, 3, 2, BOOT); P(ph ? 1 : 2, -2, 3, 2, BOOT);
-    } else {
-      P(-3, -6, 2, 4, PANT); P(1, -6, 2, 4, PANT);
-      P(-4, -2, 3, 2, BOOT); P(1, -2, 3, 2, BOOT);
-    }
-    // torso: shirt + shaded side + belt
-    P(-4, -13, 8, 7, SHIRT[w.role]); P(2, -13, 2, 7, SHIRT_SH[w.role]);
-    P(-4, -7, 8, 1, '#1C1E23');
-    // arms (swing when moving)
-    const armY = moving ? (ph ? -12 : -11) : -12;
-    P(-6, armY, 2, 4, SHIRT_SH[w.role]); P(-6, armY + 4, 2, 1, SKIN);
-    if (working) { P(4, -16, 2, 4, SHIRT[w.role]); P(4, -17, 2, 1, SKIN); P(6, -18, 3, 1, '#AEB4C0'); P(8, -17, 1, 2, '#AEB4C0'); } // wrench up
-    else if (reading) { P(4, -13, 2, 3, SHIRT[w.role]); P(5, -14, 4, 5, '#E8EAEE'); P(6, -13, 2, 1, '#9BA0AB'); P(6, -11, 2, 1, '#9BA0AB'); } // paper
-    else { P(4, armY, 2, 4, SHIRT_SH[w.role]); P(4, armY + 4, 2, 1, SKIN); }
-    // head: skin + shade + eye
-    P(-2, -18, 5, 5, SKIN); P(2, -18, 1, 5, SKIN_SH); P(1, -16, 1, 1, '#1C1E23');
-    P(-2, -19, 5, 1, HAIR);
-    // hat: hard hat for crew, headset for dispatcher, beanie for hikers
-    if (w.hiking) { P(-3, -21, 7, 2, '#C5584A'); P(0, -22, 2, 1, '#E8EAEE'); }
-    else if (w.role === 'dispatcher') { P(-3, -20, 7, 1, '#555B66'); P(3, -17, 2, 1, '#555B66'); }
-    else { P(-3, -21, 7, 2, SHIRT[w.role]); P(-4, -19, 9, 1, SHIRT_SH[w.role]); }
-    // backpack when hiking
-    if (w.hiking) { P(-7, -13, 2, 6, '#7A5230'); P(-7, -14, 2, 1, '#5B3D24'); }
-    // toolbox + log scroll when carrying tools
-    if (w.tools) { P(5, -8, 4, 3, '#C5584A'); P(6, -9, 2, 1, '#AEB4C0'); P(-8, -11, 2, 5, '#E8EAEE'); }
-    // clipboard for dispatcher
-    if (w.role === 'dispatcher' && !working) { P(5, -12, 3, 4, '#E8EAEE'); P(5, -12, 3, 1, '#9BA0AB'); }
+    ctx.drawImage(spr, 0, 0, 16, 24, -16, -47, 32, 48);
     ctx.restore();
-
-    if (inspecting) {
+    const st = w.plan[0];
+    if (st && st.kind === 'inspect') {
       ctx.fillStyle = '#E2A356'; ctx.font = '700 13px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
-      ctx.fillText('?', w.x + w.dir * 8, w.y - 44 + Math.sin(w.animT * 5) * 2);
+      ctx.fillText('?', w.x + w.dir * 10, w.y - 52 + Math.sin(w.animT * 5) * 2);
     }
   }
 
@@ -815,7 +905,7 @@
     if (html !== inspHtml) { inspHtml = html; inspector.innerHTML = html; }
     inspector.hidden = false;
     const ix = Math.max(8, Math.min(w.x - scrollX + 16, innerWidth - 270));
-    let iy = w.y - scrollY - 50 - inspector.offsetHeight;
+    let iy = w.y - scrollY - 56 - inspector.offsetHeight;
     if (iy < 8) iy = w.y - scrollY + 16;
     inspector.style.transform = 'translate(' + ix + 'px, ' + iy + 'px)';
   }
@@ -831,7 +921,7 @@
     }
     let best = null, bd = touch ? 44 : 32;
     for (const w of workers) {
-      const d = Math.hypot(w.x - e.pageX, w.y - 18 - e.pageY);
+      const d = Math.hypot(w.x - e.pageX, w.y - 24 - e.pageY);
       if (d < bd) { bd = d; best = w; }
     }
     if (best !== selected) selT = 0;
@@ -873,7 +963,7 @@
   }, 5000);
 
   for (const w of workers) w.role === 'dispatcher' ? deskPlan(w) : idle(w);
-  window.__pipeline = { workers, jobs, queue, camp, version: 3, get credits() { return credits; } };
+  window.__pipeline = { workers, jobs, queue, camp, version: 4, get credits() { return credits; } };
 
   /* ---------- main loop ---------- */
   let last = performance.now(), visible = true;
@@ -904,6 +994,15 @@
       const my = j.ground - j.el.offsetHeight - 10 + Math.sin(t / 300) * 2;
       ctx.fillStyle = '#D97462';
       ctx.fillRect(j.x0 + 6, my - 10, 3, 7); ctx.fillRect(j.x0 + 6, my - 1, 3, 3);
+    }
+
+    // toolbox on the ground beside a repairing worker
+    for (const w of workers) {
+      if (!w.job || !w.job.repair) continue;
+      const st = w.plan[0];
+      if (st && (st.kind === 'readlogs' || st.kind === 'render') && w.y > viewTop && w.y < viewBot) {
+        ctx.drawImage(TOOLBOX_GROUND, 0, 0, 10, 4, Math.round(w.x - w.dir * 26) - 10, Math.round(w.y) - 8, 20, 8);
+      }
     }
 
     // progress bars
@@ -967,7 +1066,7 @@
       if (w.y > viewTop && w.y < viewBot) {
         const m = Math.round(3 + 8 * (1 - selT));
         ctx.strokeStyle = '#E2A356'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(w.x - 11 - m, w.y - 42 - m, 22 + m * 2, 46 + m * 2);
+        ctx.strokeRect(w.x - 16 - m, w.y - 48 - m, 32 + m * 2, 52 + m * 2);
       }
       drawInspector();
     }
