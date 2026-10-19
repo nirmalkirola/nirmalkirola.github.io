@@ -5,24 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Nirmal Kirola — backend engineer at Morphic. A crew of pixel workers runs his generation pipeline to render this page.">
 <meta property="og:title" content="Nirmal Kirola — live">
-<meta property="og:description" content="This portfolio is rendered by a simulated generation pipeline: jobs queue, providers render, credits get charged, failures fall back. Off-shift, the workers climb a mountain.">
+<meta property="og:description" content="This portfolio is rendered by a simulated generation pipeline: jobs queue, providers render, credits get charged, failures get inspected and repaired. Off-shift, the crew climbs a mountain.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nirmalkirola.github.io/live/">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230E1512'/><text x='32' y='44' font-family='monospace' font-size='34' font-weight='700' text-anchor='middle' fill='%23D9A05B'>N</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23101114'/><text x='32' y='44' font-family='monospace' font-size='34' font-weight='700' text-anchor='middle' fill='%23E2A356'>N</text></svg>">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <title>nirmal — live</title>
 <style>
   :root {
     color-scheme: dark;
-    --bg: #0C1210;
-    --panel: #121A16;
-    --border: #233029;
-    --fg: #D8E2DC;
-    --dim: #8CA096;
-    --faint: #51645A;
-    --accent: #41A98F;
-    --fallback: #6FA8DF;
-    --gold: #D9A05B;
+    --bg: #101114;
+    --panel: #16181C;
+    --border: #262A31;
+    --fg: #D7DAE0;
+    --dim: #9BA0AB;
+    --faint: #555B66;
+    --accent: #E2A356;
+    --blue: #7FA7D4;
     --red: #D97462;
   }
   * { box-sizing: border-box; }
@@ -43,11 +42,10 @@
   a:hover, a:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
   a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  .wrap { max-width: 860px; margin: 0 auto; padding-block: 56px 0; }
+  .wrap { max-width: 880px; margin: 0 auto; padding-block: 56px 0; }
 
-  /* ---- job visibility states (applied only once the sim boots) ---- */
   .sim-on [data-job]:not(.done) { opacity: 0; }
-  .sim-on [data-job].rendering { opacity: 0.22; filter: saturate(0.3); }
+  .sim-on [data-job].rendering { opacity: 0.22; filter: saturate(0.25); }
   [data-job].done { opacity: 1; transition: opacity 0.5s ease, filter 0.5s ease; }
   @keyframes glitch {
     0% { transform: translateX(0); filter: none; }
@@ -58,7 +56,6 @@
   }
   [data-job].failing { animation: glitch 0.4s steps(2); }
 
-  /* ---- content ---- */
   header.hero { margin-bottom: 8px; }
   .eyebrow {
     font-family: "JetBrains Mono", monospace; font-size: 12px;
@@ -73,12 +70,12 @@
   }
   h1 .glyph { display: inline-block; white-space: pre; }
   h1 .dot { color: var(--accent); }
-  .chips { margin: 0 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
   .chips li {
     font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--dim);
     border: 1px solid var(--border); border-radius: 999px; padding: 2px 11px;
   }
-  .lede { color: var(--dim); max-width: 60ch; margin: 22px 0 0; }
+  .lede { color: var(--dim); max-width: 62ch; margin: 22px 0 0; }
   .lede b { color: var(--fg); font-weight: 600; }
   .links { margin: 14px 0 0; font-family: "JetBrains Mono", monospace; font-size: 13px; }
   .links .sep { color: var(--faint); }
@@ -107,18 +104,23 @@
   }
   .card:hover { border-color: var(--faint); }
   .card h3 { margin: 0; font-size: 16px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
-  .card .tag { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--gold); }
-  .card p { margin: 4px 0 0; color: var(--dim); font-size: 14px; max-width: 70ch; }
+  .card .tag { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--accent); }
+  .card p { margin: 4px 0 0; color: var(--dim); font-size: 14px; max-width: 72ch; }
+  .card ul { margin: 8px 0 0; padding-left: 18px; color: var(--dim); font-size: 13.5px; }
+  .card li { margin: 3px 0; max-width: 70ch; }
+  .card li b { color: var(--fg); font-weight: 500; }
 
   .xp { margin: 0; padding: 0; list-style: none; }
-  .xp li { display: flex; gap: 18px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .xp li { display: flex; gap: 18px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
   .xp li:last-child { border-bottom: none; }
   .xp .when { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--faint); width: 102px; flex: none; padding-top: 2px; }
   .xp b { font-weight: 600; }
   .xp .at { color: var(--dim); }
+  .xp p { margin: 2px 0 0; color: var(--dim); font-size: 13.5px; max-width: 64ch; }
 
-  .stackline { color: var(--dim); font-size: 14px; }
-  .stackline .mono { color: var(--fg); font-size: 13px; }
+  .stack { display: grid; grid-template-columns: 110px 1fr; row-gap: 8px; column-gap: 20px; font-size: 14px; }
+  .stack dt { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--faint); padding-top: 2px; }
+  .stack dd { margin: 0; color: var(--dim); }
 
   .contact { margin-top: 54px; padding: 18px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
   .contact p { margin: 0 0 4px; }
@@ -130,42 +132,39 @@
   }
   footer p { margin: 0 0 4px; }
 
-  /* the mountain lives here; the canvas draws into this rect */
-  #basecamp { height: 190px; margin-top: 10px; }
+  #basecamp { height: 230px; margin-top: 10px; }
 
-  /* ---- sim canvas ---- */
   #sim { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 5; }
 
-  /* ---- HUD ---- */
   #hud {
     position: fixed; top: 12px; right: 12px; z-index: 10;
     font-family: "JetBrains Mono", monospace; font-size: 11.5px;
-    background: #0F1613EE; border: 1px solid var(--border); border-radius: 6px;
+    background: #131519EE; border: 1px solid var(--border); border-radius: 6px;
     padding: 8px 12px; color: var(--dim); min-width: 164px;
     font-variant-numeric: tabular-nums;
   }
   #hud .row { display: flex; justify-content: space-between; gap: 14px; }
   #hud .v { color: var(--fg); }
-  #hud .credits { color: var(--gold); font-weight: 700; }
+  #hud .credits { color: var(--accent); font-weight: 700; }
   #hud .hd { color: var(--faint); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
   #toasts { position: fixed; top: 118px; right: 12px; z-index: 10; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
   .toast {
     font-family: "JetBrains Mono", monospace; font-size: 11px;
-    background: #0F1613EE; border: 1px solid var(--border); border-left: 3px solid var(--accent);
-    border-radius: 4px; padding: 5px 10px; color: var(--dim); max-width: 260px;
+    background: #131519EE; border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 4px; padding: 5px 10px; color: var(--dim); max-width: 270px;
   }
   .toast.warn { border-left-color: var(--red); }
-  .toast.gold { border-left-color: var(--gold); }
+  .toast.blue { border-left-color: var(--blue); }
   .toast b { color: var(--fg); }
 
   #inspector {
     position: fixed; z-index: 11; pointer-events: none;
     font-family: "JetBrains Mono", monospace; font-size: 11px; line-height: 1.55;
-    background: #0F1613F2; border: 1px solid var(--accent); border-radius: 6px;
-    padding: 8px 11px; color: var(--dim); max-width: 250px;
+    background: #131519F2; border: 1px solid var(--accent); border-radius: 6px;
+    padding: 8px 11px; color: var(--dim); max-width: 260px;
   }
-  #inspector .k { color: var(--fallback); }
-  #inspector .s { color: var(--gold); }
+  #inspector .k { color: var(--blue); }
+  #inspector .s { color: var(--accent); }
   #inspector .now { color: var(--fg); }
   #inspector ol { margin: 4px 0 0; padding-left: 16px; }
 
@@ -173,6 +172,7 @@
     .metrics { grid-template-columns: 1fr 1fr; }
     #hud { font-size: 10.5px; min-width: 140px; }
     .xp li { flex-direction: column; gap: 0; }
+    .stack { grid-template-columns: 1fr; row-gap: 2px; }
   }
   @media (prefers-reduced-motion: reduce) {
     [data-job] { opacity: 1 !important; }
@@ -202,12 +202,13 @@
     </ul>
     <p class="lede" data-job="lede" data-ground="bottom">I build the backend of <b>Morphic</b>, an AI creative studio —
     and this page is rendered by a small simulation of that job: workers pick generations off a queue,
-    providers render them, credits get charged, and failures fall back. <b>Click any finished card to break it.</b></p>
+    providers render them, credits get charged, and failures get inspected and repaired.
+    <b>Click any finished card to break one.</b></p>
     <p class="links mono" data-job="links" data-ground="bottom">
       <a href="https://github.com/nirmalkirola" target="_blank" rel="noopener">github</a> <span class="sep">·</span>
       <a href="https://www.linkedin.com/in/nirmal-kirola/" target="_blank" rel="noopener">linkedin</a> <span class="sep">·</span>
       nirmalkirola@gmail.com <span class="sep">·</span>
-      <a href="/">full portfolio →</a>
+      <a href="/">more portfolios →</a>
     </p>
   </header>
 
@@ -218,48 +219,125 @@
     <li><b>58s→3s</b><span>burst charge p95</span></li>
   </ul>
 
-  <h2 data-job="h-sys" data-ground="bottom">Systems in production</h2>
-  <p class="sub" data-job="sub-sys" data-ground="bottom">Each of these is a real system at Morphic. Each card below is a render job — click one to watch it fail over.</p>
+  <h2 data-job="h-sys" data-ground="bottom">Systems at Morphic <span class="tag mono" style="font-size:12px;color:var(--faint)">2024 → now</span></h2>
+  <p class="sub" data-job="sub-sys" data-ground="bottom">Each card is a render job — click a finished one and watch the crew diagnose and repair it.</p>
 
   <div class="card" data-job="sys-billing">
     <h3>billing-and-credits <span class="tag">[stripe · credits]</span></h3>
-    <p>Credit system with usage tracking, packs and auto-recharge, plus the full Stripe stack: seats, pause/resume, coupons, automatic tax, dunning, enterprise catalogs. The credits HUD on this page is a homage.</p>
+    <ul>
+      <li><b>Credit system built from scratch</b> — usage tracking, credit packs, auto-recharge</li>
+      <li><b>Full Stripe stack</b> — seat billing, pause/resume, upgrades/downgrades, coupons, automatic tax, dunning</li>
+      <li>Enterprise and education plan catalogs; the credits HUD on this page is a homage</li>
+    </ul>
   </div>
   <div class="card" data-job="sys-pipeline">
     <h3>generation-pipeline <span class="tag">[30+ models]</span></h3>
-    <p>Async orchestration with timeout and cancellation semantics, webhook callbacks, a routing engine with dynamic pricing, and provider fallback chains — the exact mechanic that rebuilds a card when you break it.</p>
+    <ul>
+      <li>Async-task orchestration with <b>timeout and cancellation semantics</b>, webhook-driven provider callbacks</li>
+      <li>Rules-based <b>routing engine with dynamic pricing</b> and provider fallback chains — the repair mechanic on this page</li>
+      <li>LoRA training platform with versioning across architectures</li>
+    </ul>
   </div>
   <div class="card" data-job="sys-render">
     <h3>elastic-video-rendering <span class="tag">[~10× faster]</span></h3>
-    <p>Heavy renders moved to per-task Cloud Run jobs with parallel chunked rendering. Long exports finish in minutes instead of timing out.</p>
+    <ul>
+      <li>Heavy renders moved off shared worker pools onto <b>per-task Cloud Run jobs</b></li>
+      <li>Parallel chunked rendering — long exports finish in minutes instead of timing out</li>
+    </ul>
   </div>
   <div class="card" data-job="sys-batch">
     <h3>batch-generation-lane <span class="tag">[−50% cost]</span></h3>
-    <p>Provider-agnostic lane over the OpenAI Batch API: split pricing, premium refunds on delivery, queued and wake copilot turns. Scroll this page fast and watch the HUD batch your jobs at half price.</p>
+    <ul>
+      <li>Provider-agnostic lane over the <b>OpenAI Batch API</b> for bulk workflow runs</li>
+      <li>Split pricing with premium refunds on delivery; queued + wake copilot turns</li>
+      <li>Scroll this page fast and the HUD batches your jobs at half price</li>
+    </ul>
   </div>
   <div class="card" data-job="sys-settle">
     <h3>batched-credit-settlement <span class="tag">[p95 58s→3s]</span></h3>
-    <p>Serial per-org credit locks replaced with batched settlement — diagnosed from production traces, validated at 10,000-task load.</p>
+    <ul>
+      <li>Serial per-org credit locks replaced with <b>batched settlement</b></li>
+      <li>Diagnosed from production traces, validated at 10,000-task load</li>
+    </ul>
   </div>
   <div class="card" data-job="sys-copilot">
     <h3>copilot-subagent-architecture <span class="tag">[in production]</span></h3>
-    <p>The AI copilot's generation tools re-architected into sub-agents with model-specific tools per modality.</p>
+    <ul>
+      <li>The AI copilot's generation tools re-architected into <b>sub-agents with model-specific tools</b> per modality</li>
+      <li>Also shipped: org multi-tenancy with live data migration, the public API platform, realtime comments, the bulk-download pipeline</li>
+    </ul>
   </div>
-  <div class="card" data-job="sys-earlier">
-    <h3>earlier ascents <span class="tag">[2020 — 2024]</span></h3>
-    <p><b>Planify Capital</b> — led the fintech backend: payments on three rails, KYC ×19, the buy-sell trading platform.
-    <b>Lenskart</b> — realtime recommenders and eyewear computer vision; a selfie replaced an in-store fitting.</p>
+
+  <h2 data-job="h-fin" data-ground="bottom">Planify Capital <span class="tag mono" style="font-size:12px;color:var(--faint)">fintech · 2023 → 2024 · backend lead</span></h2>
+  <div class="card" data-job="fin-pay">
+    <h3>payments-and-subscriptions <span class="tag">[3 payment rails]</span></h3>
+    <ul>
+      <li>Stock purchases via <b>Billdesk, Paytm and ICICI API Banking</b>; premium subscriptions; partner payment links</li>
+      <li>Admin dashboards for leads, refunds, feedback and subscriptions</li>
+    </ul>
+  </div>
+  <div class="card" data-job="fin-trade">
+    <h3>buy-sell-trading-platform <span class="tag">[flagship]</span></h3>
+    <ul>
+      <li>Bids on unlisted stock: <b>bid management and fulfillment</b>, portfolio, tradebook, sharebook</li>
+      <li>Investor wallets with withdrawals and cashbacks; channel-partner incentives</li>
+    </ul>
+  </div>
+  <div class="card" data-job="fin-kyc">
+    <h3>kyc-and-investor-services <span class="tag">[19 KYC types]</span></h3>
+    <ul>
+      <li>KYC workflows across <b>19 verification types</b>; research report sections</li>
+      <li>Daily stock &amp; news notifications; embeddable stock-performance widgets</li>
+    </ul>
+  </div>
+
+  <h2 data-job="h-ml" data-ground="bottom">Lenskart <span class="tag mono" style="font-size:12px;color:var(--faint)">e-commerce ML · 2021 → 2023</span></h2>
+  <div class="card" data-job="ml-reco">
+    <h3>personalized-recommendations <span class="tag">[realtime]</span></h3>
+    <ul>
+      <li><b>Implicit matrix factorization, Prod2Vec + Meta-Prod2Vec, image similarity</b></li>
+      <li>Re-ranked category pages, cold-start handling, realtime personalization</li>
+    </ul>
+  </div>
+  <div class="card" data-job="ml-cv">
+    <h3>eyewear-computer-vision <span class="tag">[selfie → fit]</span></h3>
+    <ul>
+      <li>Face-width + frame-size prediction (<b>Face Mesh + XGBoost</b>); pupil distance for bifocals (<b>LCNN</b>)</li>
+      <li>A photo replaces an in-store fitting</li>
+    </ul>
+  </div>
+  <div class="card" data-job="ml-search">
+    <h3>search-by-look <span class="tag">[visual search]</span></h3>
+    <ul>
+      <li>Upload a photo of someone wearing frames and find them — detection, embeddings, similarity</li>
+      <li>Multisearch refinement by brand, color, material, size; auto color swatches for the catalog</li>
+    </ul>
   </div>
 
   <h2 data-job="h-xp" data-ground="bottom">Route log</h2>
   <ul class="xp" data-job="xp">
-    <li><span class="when">2024 → now</span><span><b>Software Engineer</b> <span class="at">· Morphic — billing, generation infra, the AI copilot</span></span></li>
-    <li><span class="when">2023 → 2024</span><span><b>Software Engineer</b> <span class="at">· Planify Capital — backend lead, fintech</span></span></li>
-    <li><span class="when">2021 → 2023</span><span><b>Data Scientist I / MLE</b> <span class="at">· Lenskart — recommenders, computer vision</span></span></li>
-    <li><span class="when">2020 → 2021</span><span><b>Earlier</b> <span class="at">· Cogitate (.NET) · Sonatic AI (deep learning)</span></span></li>
+    <li><span class="when">2024 → now</span><span><b>Software Engineer</b> <span class="at">· Morphic</span><p>Billing, generation infrastructure, multi-tenancy, the AI copilot.</p></span></li>
+    <li><span class="when">2023 → 2024</span><span><b>Software Engineer</b> <span class="at">· Planify Capital</span><p>Led the backend team — payments, subscriptions, KYC, the trading platform.</p></span></li>
+    <li><span class="when">2021 → 2023</span><span><b>Data Scientist I / MLE</b> <span class="at">· Lenskart</span><p>Recommender systems + computer vision for eyewear fitting and search.</p></span></li>
+    <li><span class="when">2021</span><span><b>Associate Developer</b> <span class="at">· Cogitate</span><p>Insurance digitalization in .NET — frontend, backend, chatbots.</p></span></li>
+    <li><span class="when">2020 → 2021</span><span><b>R&amp;D Engineer, DL</b> <span class="at">· Sonatic AI</span><p>LSTM search ranking, email intent, personality models. The trailhead.</p></span></li>
   </ul>
 
-  <p class="stackline" data-job="stack" data-ground="bottom" style="margin-top:18px"><span class="mono">stack:</span> typescript · node · python · postgresql · redis · gcp · cloud run · temporal · stripe · ffmpeg</p>
+  <h2 data-job="h-stack" data-ground="bottom">Stack</h2>
+  <dl class="stack" data-job="stack">
+    <dt>backend</dt><dd>typescript · node · python · postgresql · redis · typeorm · stripe</dd>
+    <dt>infra</dt><dd>gcp · cloud run · pubsub · gcs · temporal · ffmpeg</dd>
+    <dt>ai + data</dt><dd>llm agents · generative media · recommenders · computer vision · xgboost</dd>
+  </dl>
+
+  <div class="card" data-job="edu" style="margin-top:20px; cursor: default;">
+    <h3>education <span class="tag">[2017 — 2021]</span></h3>
+    <ul>
+      <li><b>B.Tech, Computer Science</b> · Birla Institute of Applied Sciences</li>
+      <li>Published: "Intelligent Data-Analytic Approach for Restaurant Recommendation"</li>
+      <li>Deep Learning Specialization · Neural Networks and DL · Structuring ML Projects · Data Viz with Python</li>
+    </ul>
+  </div>
 
   <div class="contact" data-job="contact">
     <p><b>Open to interesting problems.</b></p>
@@ -296,31 +374,30 @@
     const h = el.offsetHeight || 20;
     jobs.push({
       el, id: el.dataset.job, ground: 0, x0: 0, x1: 0, workX: 0,
-      state: 'pending', effort: 0.35 + Math.min(1.6, h / 160),
+      state: 'pending', effort: 0.35 + Math.min(1.8, h / 150),
       cost: Math.max(1, Math.round(h / 14)), batch: false, provider: 'primary',
-      glyph: el.classList.contains('glyph'),
+      glyph: el.classList.contains('glyph'), tMark: 0,
     });
   });
 
-  const camp = { x0: 0, x1: 0, base: 0 };
+  const camp = { x0: 0, x1: 0, base: 0, top: 0 };
   function measure() {
     for (const j of jobs) {
       const r = j.el.getBoundingClientRect();
-      const top = r.top + scrollY;
-      j.ground = j.el.dataset.ground === 'bottom' ? top + r.height : top + r.height;
+      j.ground = r.top + scrollY + r.height;
       j.x0 = r.left + scrollX; j.x1 = j.x0 + r.width;
-      j.workX = j.x0 + Math.min(r.width * 0.5, 120);
+      j.workX = j.x0 + Math.min(r.width * 0.5, 130);
     }
     const bc = document.getElementById('basecamp').getBoundingClientRect();
     camp.x0 = bc.left + scrollX + 6; camp.x1 = bc.right + scrollX - 6;
-    camp.base = bc.bottom + scrollY - 10;
+    camp.base = bc.bottom + scrollY - 10; camp.top = bc.top + scrollY;
   }
   const vw = () => document.documentElement.clientWidth;
 
-  /* ---------- the ridge (basecamp mountain) ---------- */
-  const RIDGE = [[0,.1],[.1,.42],[.2,.26],[.33,.72],[.44,.46],[.55,.98],[.63,.62],[.74,.78],[.86,.34],[1,.12]];
-  const RIDGE_H = 132;
-  function ridgeY(x) { // x in doc coords -> y on ridge surface
+  /* ---------- the ridge ---------- */
+  const RIDGE = [[0,.08],[.1,.4],[.2,.24],[.33,.7],[.44,.44],[.55,.97],[.63,.6],[.74,.76],[.86,.32],[1,.1]];
+  const RIDGE_H = 150;
+  function ridgeY(x) {
     const t = Math.max(0, Math.min(1, (x - camp.x0) / Math.max(1, camp.x1 - camp.x0)));
     for (let i = 1; i < RIDGE.length; i++) {
       if (t <= RIDGE[i][0]) {
@@ -331,8 +408,11 @@
     }
     return camp.base;
   }
-  const seatTs = [0.5, 0.53, 0.57, 0.6, 0.33, 0.74, 0.45];
+  const seatTs = [0.5, 0.53, 0.6, 0.62, 0.33, 0.74, 0.45];
   const campfireT = 0.565;
+  const treeTs = [0.06, 0.13, 0.17, 0.27, 0.4, 0.47, 0.68, 0.71, 0.8, 0.9];
+  const stars = [];
+  for (let i = 0; i < 46; i++) stars.push([Math.random(), Math.random() * 0.55, Math.random() * 7]);
 
   /* ---------- workers ---------- */
   const N = innerWidth < 768 ? 9 : 16;
@@ -343,9 +423,9 @@
     workers.push({
       id: 'worker/' + String(i + 1).padStart(2, '0'),
       role: roles(i), x: left ? -14 - i * 6 : innerWidth + 14 + i * 6, y: 150,
-      dir: left ? 1 : -1, speed: 150 + Math.random() * 70, climb: 260,
+      dir: left ? 1 : -1, speed: 155 + Math.random() * 70, climb: 270,
       plan: [], busy: false, job: null, animT: Math.random() * 9, workT: 0,
-      goal: 'reporting in', hiking: false,
+      goal: 'reporting in', hiking: false, tools: false,
     });
   }
 
@@ -360,8 +440,8 @@
     const box = document.getElementById('toasts');
     box.appendChild(t);
     while (box.children.length > 4) box.removeChild(box.firstChild);
-    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .5s'; }, 3400);
-    setTimeout(() => t.remove(), 4000);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .5s'; }, 3600);
+    setTimeout(() => t.remove(), 4200);
   }
   function hudTick() {
     hq.textContent = String(queue.length);
@@ -381,34 +461,50 @@
   }
   function assign(w, j) {
     w.busy = true; w.hiking = false; w.job = j;
-    j.state = 'rendering';
+    j.state = 'rendering'; j.tMark = performance.now();
     j.el.classList.add('rendering');
-    w.goal = 'render ' + j.id + ' on ' + j.provider;
-    w.plan = [...pathTo(w, j.workX, j.ground), { kind: 'render', job: j, remaining: j.effort, label: 'render (' + j.provider + ')' }];
+    if (j.repair) {
+      w.goal = 'repair ' + j.id;
+      w.plan = [
+        ...pathTo(w, j.workX, j.ground),
+        { kind: 'inspect', remaining: 1.9, label: 'inspect the failure' },
+        { kind: 'goto', x: -36, label: 'fetch tools + logs' },
+        { kind: 'fetch', remaining: 1.1, label: 'grab toolbox, pull logs' },
+        { kind: 'goto', x: j.workX, label: 'carry back to ' + j.id },
+        { kind: 'readlogs', remaining: 1.5, label: 'read the trace' },
+        { kind: 'render', job: j, remaining: j.effort * 0.8, label: 'repair (fallback)' },
+      ];
+    } else {
+      w.goal = 'render ' + j.id + ' on ' + j.provider;
+      w.plan = [...pathTo(w, j.workX, j.ground), { kind: 'render', job: j, remaining: j.effort, label: 'render (' + j.provider + ')' }];
+    }
   }
   function charge(j) {
     const amt = j.batch ? Math.ceil(j.cost / 2) : j.cost;
     credits += amt;
-    coins.push({ x: j.workX, y: j.ground - 26, vy: -46, life: 1, amt });
+    coins.push({ x: j.workX, y: j.ground - 30, vy: -46, life: 1, amt });
   }
   function complete(w) {
     const j = w.job;
     const alreadyDone = j.state === 'done';
-    j.state = 'done'; j.el.classList.remove('rendering'); j.el.classList.add('done');
+    const wasRepair = j.repair;
+    j.state = 'done'; j.repair = false;
+    j.el.classList.remove('rendering'); j.el.classList.add('done');
     if (!alreadyDone) charge(j);
-    w.job = null; w.busy = false;
+    if (wasRepair) toast('<b>fixed</b> · ' + j.id + ' redeployed on fallback', 'blue');
+    w.job = null; w.busy = false; w.tools = false;
     idle(w);
     pump();
   }
   function idle(w) {
     if (w.role === 'dispatcher') { deskPlan(w); return; }
-    w.busy = false;
-    if (queue.length) return; // pump will grab us
-    if (Math.random() < 0.6) { // hike to basecamp
+    w.busy = false; w.tools = false;
+    if (queue.length) return;
+    if (Math.random() < 0.6) {
       w.hiking = true; w.goal = 'off shift → basecamp';
       const t = seatTs[Math.floor(Math.random() * seatTs.length)] + (Math.random() - 0.5) * 0.02;
       const sx = camp.x0 + (camp.x1 - camp.x0) * t;
-      w.plan = [...pathTo(w, camp.x0 + 20, camp.base), { kind: 'hike', x: sx, label: 'hike the ridge' }, { kind: 'sit', remaining: 6 + Math.random() * 14, label: 'campfire' }];
+      w.plan = [...pathTo(w, camp.x0 + 20, camp.base), { kind: 'hike', x: sx, label: 'hike the ridge' }, { kind: 'sit', remaining: 7 + Math.random() * 15, label: 'campfire' }];
     } else {
       w.goal = Math.random() < 0.5 ? 'loiter' : 'patrol';
       const dx = (Math.random() < 0.5 ? -1 : 1) * (50 + Math.random() * 240);
@@ -418,26 +514,23 @@
   function deskPlan(w) {
     w.goal = 'route jobs · keep the queue moving';
     const j0 = jobs[0];
-    const dx = j0 ? j0.x0 - 46 : 60;
-    const dy = j0 ? j0.ground : 160;
-    w.plan = [...pathTo(w, dx, dy), { kind: 'pause', remaining: 6 + Math.random() * 5, label: 'dispatching' }];
+    w.plan = [...pathTo(w, j0 ? j0.x0 - 46 : 60, j0 ? j0.ground : 160), { kind: 'pause', remaining: 6 + Math.random() * 5, label: 'dispatching' }];
   }
 
   function pump() {
-    // batch detection: a burst of queued jobs becomes a batch at half price
-    const eligible = queue.filter(j => !j.glyph && !j.batch);
+    const eligible = queue.filter(j => !j.glyph && !j.batch && !j.repair);
     if (eligible.length >= 4) {
       for (const j of eligible) j.batch = true;
-      toast('batched <b>' + eligible.length + ' jobs</b> · −50% · the batch lane says hi', 'gold');
+      toast('batched <b>' + eligible.length + ' jobs</b> · −50% · the batch lane says hi');
     }
     for (let qi = 0; qi < queue.length;) {
       const j = queue[qi];
       if (j.state !== 'queued') { queue.splice(qi, 1); continue; }
-      const pool = workers.filter(w => !w.busy && w.role !== 'dispatcher' && (j.provider === 'primary' ? w.role === 'primary' : w.role === 'fallback'));
-      // allow cross-provider help if the right pool is empty and job is primary
-      const pick = pool.length ? pool : (j.provider === 'primary' ? workers.filter(w => !w.busy && w.role === 'fallback') : []);
+      const want = j.provider === 'primary' ? 'primary' : 'fallback';
+      let pool = workers.filter(w => !w.busy && w.role === want);
+      if (!pool.length) pool = workers.filter(w => !w.busy && w.role !== 'dispatcher');
       let best = null, bd = Infinity;
-      for (const w of pick) {
+      for (const w of pool) {
         const d = Math.abs(w.x - j.workX) + Math.abs(w.y - j.ground) * 2;
         if (d < bd) { bd = d; best = w; }
       }
@@ -448,26 +541,26 @@
   }
   function enqueue(j) {
     if (j.state !== 'pending') return;
-    j.state = 'queued';
+    j.state = 'queued'; j.tMark = performance.now();
     queue.push(j);
     pump();
   }
 
-  /* ---------- failure / fallback (the click) ---------- */
+  /* ---------- failure → inspect → fetch → repair ---------- */
+  let firstFailDone = false;
   function fail(j) {
     const refund = j.batch ? Math.ceil(j.cost / 2) : j.cost;
     credits -= refund;
-    toast('<b>provider_error</b> · ' + j.id + ' on primary · refunded ' + refund + ' cr · retrying on <b>fallback</b>', 'warn');
+    toast('<b>provider_error</b> · ' + j.id + ' on primary · refunded ' + refund + ' cr · dispatching repair', 'warn');
     j.el.classList.remove('done'); j.el.classList.add('failing');
-    for (let i = 0; i < 14; i++) dust.push({ x: j.x0 + Math.random() * (j.x1 - j.x0), y: j.ground - Math.random() * 24, vx: (Math.random() - 0.5) * 60, vy: -30 - Math.random() * 50, life: 0.5 + Math.random() * 0.4, red: true });
+    for (let i = 0; i < 14; i++) dust.push({ x: j.x0 + Math.random() * (j.x1 - j.x0), y: j.ground - Math.random() * 24, vx: (Math.random() - 0.5) * 60, vy: -30 - Math.random() * 50, life: 0.5 + Math.random() * 0.4, c: '#D97462' });
     setTimeout(() => { j.el.classList.remove('failing'); j.el.classList.add('rendering'); }, 380);
-    j.state = 'pending'; j.provider = 'fallback'; j.batch = false;
+    j.state = 'pending'; j.provider = 'fallback'; j.batch = false; j.repair = true;
     firstFailDone = true;
     setTimeout(() => enqueue(j), 420);
   }
 
-  /* ---------- particles ---------- */
-  const dust = [], coins = [], smoke = [];
+  const dust = [], coins = [], smoke = [], embers = [];
 
   /* ---------- stepping ---------- */
   function step(w, dt) {
@@ -495,96 +588,197 @@
         w.y = ridgeY(w.x);
         break;
       }
+      case 'inspect': case 'readlogs': {
+        s.remaining -= dt; w.workT += dt;
+        if (s.remaining <= 0) w.plan.shift();
+        break;
+      }
+      case 'fetch': {
+        s.remaining -= dt;
+        if (s.remaining <= 0) { w.tools = true; w.plan.shift(); }
+        break;
+      }
       case 'render': {
         w.workT += dt; s.remaining -= dt;
-        if (Math.random() < dt * 16) dust.push({ x: w.x + w.dir * 14 + (Math.random() - 0.5) * 8, y: w.y - 14 - Math.random() * 16, vx: (Math.random() - 0.5) * 24, vy: -20 - Math.random() * 26, life: 0.4 + Math.random() * 0.4 });
+        if (Math.random() < dt * 16) dust.push({ x: w.x + w.dir * 14 + (Math.random() - 0.5) * 8, y: w.y - 16 - Math.random() * 14, vx: (Math.random() - 0.5) * 24, vy: -20 - Math.random() * 26, life: 0.4 + Math.random() * 0.4, c: s.job.repair ? '#7FA7D4' : '#E2A356' });
         if (s.remaining <= 0) { w.plan.shift(); complete(w); }
         break;
       }
       case 'sit': case 'pause': {
         s.remaining -= dt;
-        if (queue.length && s.kind === 'sit') { w.plan = []; break; } // recall from the mountain
+        if (queue.length && s.kind === 'sit') { w.plan = []; break; }
         if (s.remaining <= 0) w.plan.shift();
         break;
       }
     }
   }
 
-  /* ---------- pixel sprites (drawn, no sheets) ---------- */
-  const SKIN = '#E3BC94', PANTS = '#20302A';
-  const SHIRT = { primary: '#41A98F', fallback: '#6FA8DF', dispatcher: '#D9A05B' };
-  function drawWorker(w, t) {
-    const s = 2; // pixel scale
-    const x = Math.round(w.x), y = Math.round(w.y);
+  /* ---------- detailed pixel sprites ---------- */
+  const SKIN = '#E6BE93', SKIN_SH = '#C79B74', BOOT = '#23252B', PANT = '#383C45', HAIR = '#2B2520';
+  const SHIRT = { primary: '#E2A356', fallback: '#7FA7D4', dispatcher: '#C9CDD6' };
+  const SHIRT_SH = { primary: '#B47C3C', fallback: '#5C83AE', dispatcher: '#9BA0AB' };
+  function drawWorker(w) {
+    const s = 2;
     const st = w.plan[0];
     const moving = st && (st.kind === 'goto' || st.kind === 'hike' || st.kind === 'climbTo');
     const working = st && st.kind === 'render';
+    const inspecting = st && st.kind === 'inspect';
+    const reading = st && st.kind === 'readlogs';
     const sitting = st && st.kind === 'sit';
     const ph = Math.floor(w.animT * (moving ? 9 : 2)) % 2;
     ctx.save();
-    ctx.translate(x, y);
+    ctx.translate(Math.round(w.x), Math.round(w.y));
+    // shadow
+    ctx.globalAlpha = 0.28; ctx.fillStyle = '#000';
+    ctx.fillRect(-10, -2, 20, 3); ctx.globalAlpha = 1;
     if (w.dir < 0) ctx.scale(-1, 1);
     const P = (px, py, pw, phh, c) => { ctx.fillStyle = c; ctx.fillRect(px * s, py * s, pw * s, phh * s); };
+
     if (sitting) {
-      P(-3, -10, 6, 4, SHIRT[w.role]); P(-3, -6, 6, 2, PANTS); P(-1, -14, 4, 4, SKIN);
-      P(-5, -6, 2, 2, PANTS); P(3, -6, 2, 2, PANTS);
-    } else {
-      // legs
-      if (moving) { P(-3, -4, 2, 4, PANTS); P(ph ? 1 : 2, -4, 2, 4, PANTS); }
-      else { P(-3, -4, 2, 4, PANTS); P(1, -4, 2, 4, PANTS); }
-      // body
-      P(-3, -11, 6, 7, SHIRT[w.role]);
-      // head
-      P(-2, -16, 5, 5, SKIN);
-      // hair
-      P(-2, -17, 5, 2, '#2A2320');
-      // arms
-      if (working) { P(3, (ph ? -12 : -10), 3, 2, SKIN); }
-      else if (w.role === 'dispatcher') { P(3, -10, 3, 2, '#E8ECE9'); P(3, -12, 3, 1, '#E8ECE9'); } // clipboard
-      else { P(3, -9, 2, 3, SKIN); }
-      // backpack when hiking
-      if (w.hiking) P(-5, -11, 2, 5, '#8A5B35');
+      P(-4, -8, 8, 4, SHIRT[w.role]); P(2, -8, 2, 4, SHIRT_SH[w.role]);
+      P(-4, -4, 8, 2, PANT); P(-5, -2, 3, 2, BOOT); P(3, -2, 3, 2, BOOT);
+      P(-2, -12, 5, 4, SKIN); P(2, -12, 1, 4, SKIN_SH);
+      P(-3, -14, 7, 2, '#C5584A'); P(0, -15, 2, 1, '#E8EAEE'); // beanie + pom
+      P(4, -7, 2, 2, '#8A5B35'); // mug
+      ctx.restore(); return;
     }
+
+    // legs + boots
+    if (moving) {
+      P(-3, -6, 2, 4, PANT); P(ph ? 1 : 2, -6, 2, 4, PANT);
+      P(-4, -2, 3, 2, BOOT); P(ph ? 1 : 2, -2, 3, 2, BOOT);
+    } else {
+      P(-3, -6, 2, 4, PANT); P(1, -6, 2, 4, PANT);
+      P(-4, -2, 3, 2, BOOT); P(1, -2, 3, 2, BOOT);
+    }
+    // torso: shirt + shaded side + belt
+    P(-4, -13, 8, 7, SHIRT[w.role]); P(2, -13, 2, 7, SHIRT_SH[w.role]);
+    P(-4, -7, 8, 1, '#1C1E23');
+    // arms (swing when moving)
+    const armY = moving ? (ph ? -12 : -11) : -12;
+    P(-6, armY, 2, 4, SHIRT_SH[w.role]); P(-6, armY + 4, 2, 1, SKIN);
+    if (working) { P(4, -16, 2, 4, SHIRT[w.role]); P(4, -17, 2, 1, SKIN); P(6, -18, 3, 1, '#AEB4C0'); P(8, -17, 1, 2, '#AEB4C0'); } // wrench up
+    else if (reading) { P(4, -13, 2, 3, SHIRT[w.role]); P(5, -14, 4, 5, '#E8EAEE'); P(6, -13, 2, 1, '#9BA0AB'); P(6, -11, 2, 1, '#9BA0AB'); } // paper
+    else { P(4, armY, 2, 4, SHIRT_SH[w.role]); P(4, armY + 4, 2, 1, SKIN); }
+    // head: skin + shade + eye
+    P(-2, -18, 5, 5, SKIN); P(2, -18, 1, 5, SKIN_SH); P(1, -16, 1, 1, '#1C1E23');
+    P(-2, -19, 5, 1, HAIR);
+    // hat: hard hat for crew, headset for dispatcher, beanie for hikers
+    if (w.hiking) { P(-3, -21, 7, 2, '#C5584A'); P(0, -22, 2, 1, '#E8EAEE'); }
+    else if (w.role === 'dispatcher') { P(-3, -20, 7, 1, '#555B66'); P(3, -17, 2, 1, '#555B66'); }
+    else { P(-3, -21, 7, 2, SHIRT[w.role]); P(-4, -19, 9, 1, SHIRT_SH[w.role]); }
+    // backpack when hiking
+    if (w.hiking) { P(-7, -13, 2, 6, '#7A5230'); P(-7, -14, 2, 1, '#5B3D24'); }
+    // toolbox + log scroll when carrying tools
+    if (w.tools) { P(5, -8, 4, 3, '#C5584A'); P(6, -9, 2, 1, '#AEB4C0'); P(-8, -11, 2, 5, '#E8EAEE'); }
+    // clipboard for dispatcher
+    if (w.role === 'dispatcher' && !working) { P(5, -12, 3, 4, '#E8EAEE'); P(5, -12, 3, 1, '#9BA0AB'); }
     ctx.restore();
+
+    if (inspecting) {
+      ctx.fillStyle = '#E2A356'; ctx.font = '700 13px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+      ctx.fillText('?', w.x + w.dir * 8, w.y - 44 + Math.sin(w.animT * 5) * 2);
+    }
   }
 
-  /* ---------- mountain + campfire ---------- */
+  /* ---------- mountain, camp, sky ---------- */
   function drawCamp(t, viewTop, viewBot) {
-    if (camp.base < viewTop - 40 || camp.base - RIDGE_H > viewBot) return;
+    if (camp.top > viewBot || camp.base < viewTop) return;
     const W = camp.x1 - camp.x0;
+    // moon + stars
+    ctx.fillStyle = '#D7DAE0';
+    const mx = camp.x1 - 70, my = camp.top + 26;
+    ctx.beginPath(); ctx.arc(mx, my, 9, 0, 7); ctx.fill();
+    ctx.fillStyle = '#9BA0AB'; ctx.fillRect(mx - 3, my - 2, 3, 3); ctx.fillRect(mx + 2, my + 3, 2, 2);
+    for (let i = 0; i < stars.length; i++) {
+      const [sx, sy, sp] = stars[i];
+      ctx.globalAlpha = 0.25 + 0.55 * Math.abs(Math.sin(t / 900 + sp));
+      ctx.fillStyle = '#D7DAE0';
+      ctx.fillRect(camp.x0 + sx * W, camp.top + 8 + sy * (RIDGE_H * 0.7), 2, 2);
+    }
+    ctx.globalAlpha = 1;
     // far ridge
-    ctx.fillStyle = '#131C17';
+    ctx.fillStyle = '#15171B';
     ctx.beginPath(); ctx.moveTo(camp.x0, camp.base);
-    for (const [rt, rh] of RIDGE) ctx.lineTo(camp.x0 + W * rt + 24, camp.base - rh * RIDGE_H * 0.6 - 8);
+    for (const [rt, rh] of RIDGE) ctx.lineTo(camp.x0 + W * rt + 30, camp.base - rh * RIDGE_H * 0.55 - 10);
     ctx.lineTo(camp.x1, camp.base); ctx.closePath(); ctx.fill();
-    // near ridge
-    ctx.fillStyle = '#18231D';
+    // near ridge + rim light
+    ctx.fillStyle = '#1C1F25';
     ctx.beginPath(); ctx.moveTo(camp.x0, camp.base);
     for (const [rt, rh] of RIDGE) ctx.lineTo(camp.x0 + W * rt, camp.base - rh * RIDGE_H);
     ctx.lineTo(camp.x1, camp.base); ctx.closePath(); ctx.fill();
-    // snow caps on the two big peaks
+    ctx.strokeStyle = '#343943'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < RIDGE.length; i++) {
+      const [rt, rh] = RIDGE[i];
+      const px = camp.x0 + W * rt, py = camp.base - rh * RIDGE_H;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    // stepped snow caps
     for (const pt of [0.33, 0.55, 0.74]) {
       const px = camp.x0 + W * pt, py = ridgeY(px);
-      ctx.fillStyle = '#AFC4BA';
-      ctx.beginPath(); ctx.moveTo(px - 7, py + 6); ctx.lineTo(px, py - 1); ctx.lineTo(px + 7, py + 6); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#E8EAEE';
+      ctx.fillRect(px - 2, py - 1, 4, 2);
+      ctx.fillRect(px - 5, py + 1, 10, 2);
+      ctx.fillStyle = '#AEB4C0';
+      ctx.fillRect(px - 8, py + 3, 16, 2);
     }
-    // campfire
+    // summit flag
+    const fx0 = camp.x0 + W * 0.55, fy0 = ridgeY(fx0);
+    ctx.fillStyle = '#9BA0AB'; ctx.fillRect(fx0 + 3, fy0 - 14, 1, 13);
+    ctx.fillStyle = '#C5584A'; ctx.fillRect(fx0 + 4, fy0 - 14, 6, 4);
+    // pines on the lower slopes
+    for (const tt of treeTs) {
+      const px = camp.x0 + W * tt, py = ridgeY(px);
+      if (camp.base - py > RIDGE_H * 0.55) continue;
+      ctx.fillStyle = '#20262C';
+      ctx.fillRect(px - 1, py - 4, 2, 4);
+      ctx.fillRect(px - 3, py - 7, 6, 3);
+      ctx.fillRect(px - 2, py - 10, 4, 3);
+      ctx.fillRect(px - 1, py - 12, 2, 2);
+      ctx.fillStyle = '#17191D'; ctx.fillRect(px, py - 1, 1, 2);
+    }
+    // dotted trail from the base to the campfire
+    ctx.fillStyle = '#3A3F49';
+    for (let i = 0; i <= 16; i++) {
+      const px = camp.x0 + 20 + ((camp.x0 + W * campfireT) - (camp.x0 + 20)) * (i / 16);
+      if (i % 2 === 0) ctx.fillRect(Math.round(px), Math.round(ridgeY(px)) + 1, 2, 2);
+    }
+    // tents
+    const tents = [[0.528, '#E2A356', '#B47C3C'], [0.6, '#7FA7D4', '#5C83AE']];
+    for (const [tt, c1, c2] of tents) {
+      const px = camp.x0 + W * tt, py = ridgeY(px);
+      ctx.fillStyle = c2;
+      ctx.beginPath(); ctx.moveTo(px - 10, py); ctx.lineTo(px, py - 11); ctx.lineTo(px + 10, py); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = c1;
+      ctx.beginPath(); ctx.moveTo(px - 10, py); ctx.lineTo(px, py - 11); ctx.lineTo(px + 3, py); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#101114';
+      ctx.beginPath(); ctx.moveTo(px - 4, py); ctx.lineTo(px, py - 5); ctx.lineTo(px + 1, py); ctx.closePath(); ctx.fill();
+    }
+    // campfire: glow, stone ring, logs, layered flame
     const fx = camp.x0 + W * campfireT, fy = ridgeY(fx) + 1;
-    ctx.fillStyle = '#5B4328'; ctx.fillRect(fx - 5, fy - 2, 10, 3);
-    const fl = ['#D9A05B', '#C9694A', '#E8C06A'];
-    for (let i = 0; i < 3; i++) {
-      const fh = 4 + Math.round(Math.sin(t / 90 + i * 2.1) * 2 + 2 + Math.random() * 2);
-      ctx.fillStyle = fl[i];
-      ctx.fillRect(fx - 3 + i * 2, fy - 2 - fh, 2, fh);
-    }
-    if (Math.random() < 0.12) smoke.push({ x: fx + (Math.random() - 0.5) * 4, y: fy - 12, vy: -14 - Math.random() * 8, life: 1.6 });
-    // base camp sign
-    ctx.fillStyle = '#51645A'; ctx.font = '600 10px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
-    ctx.fillText('BASE CAMP · 2,084 m', camp.x0 + 4, camp.base - RIDGE_H - 12);
+    const glow = ctx.createRadialGradient(fx, fy - 4, 2, fx, fy - 4, 34);
+    glow.addColorStop(0, 'rgba(226,163,86,0.22)'); glow.addColorStop(1, 'rgba(226,163,86,0)');
+    ctx.fillStyle = glow; ctx.fillRect(fx - 36, fy - 40, 72, 48);
+    ctx.fillStyle = '#555B66';
+    ctx.fillRect(fx - 8, fy - 1, 3, 2); ctx.fillRect(fx + 5, fy - 1, 3, 2); ctx.fillRect(fx - 2, fy + 1, 4, 2);
+    ctx.fillStyle = '#5B4328'; ctx.fillRect(fx - 6, fy - 3, 12, 2);
+    ctx.fillStyle = '#4A3620'; ctx.fillRect(fx - 4, fy - 5, 8, 2);
+    const fl = Math.floor(t / 120) % 2;
+    ctx.fillStyle = '#C5584A'; ctx.fillRect(fx - 4, fy - 9 - fl, 8, 5);
+    ctx.fillStyle = '#E2A356'; ctx.fillRect(fx - 3, fy - 12 + fl, 6, 6);
+    ctx.fillStyle = '#F2D08A'; ctx.fillRect(fx - 1, fy - 13 + fl, 3, 4);
+    ctx.fillStyle = '#FBF0D0'; ctx.fillRect(fx, fy - 10, 1, 2);
+    if (Math.random() < 0.3) embers.push({ x: fx + (Math.random() - 0.5) * 6, y: fy - 12, vx: (Math.random() - 0.5) * 10, vy: -16 - Math.random() * 18, life: 0.7 + Math.random() * 0.5 });
+    if (Math.random() < 0.1) smoke.push({ x: fx + (Math.random() - 0.5) * 4, y: fy - 16, vy: -13 - Math.random() * 7, life: 1.8 });
+    // sign
+    ctx.fillStyle = '#555B66'; ctx.font = '600 10px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
+    ctx.fillText('BASE CAMP · 2,084 m', camp.x0 + 4, camp.base - RIDGE_H - 22);
   }
 
   /* ---------- click-me arrow ---------- */
-  let firstFailDone = false, arrowT = 0;
+  let arrowT = 0;
   function drawArrow(t, viewTop, viewBot) {
     if (firstFailDone) return;
     const target = jobs.find(j => j.id === 'sys-pipeline' && j.state === 'done');
@@ -595,7 +789,7 @@
     const a = Math.min(1, arrowT / 0.6);
     const bob = Math.sin(t / 420) * 3;
     const sx = tx + 70, sy = ty - 34 + bob;
-    ctx.strokeStyle = '#D9A05B'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.globalAlpha = a;
+    ctx.strokeStyle = '#E2A356'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.globalAlpha = a;
     ctx.beginPath(); ctx.moveTo(sx, sy);
     ctx.quadraticCurveTo(sx - 26, sy + 2, tx + 8, ty + bob * 0.5);
     ctx.stroke();
@@ -603,7 +797,7 @@
     ctx.moveTo(tx + 8, ty + bob * 0.5); ctx.lineTo(tx + 18, ty - 7 + bob * 0.5);
     ctx.moveTo(tx + 8, ty + bob * 0.5); ctx.lineTo(tx + 20, ty + 5 + bob * 0.5);
     ctx.stroke();
-    ctx.font = 'italic 600 12px "JetBrains Mono", monospace'; ctx.fillStyle = '#D9A05B'; ctx.textAlign = 'left';
+    ctx.font = 'italic 600 12px "JetBrains Mono", monospace'; ctx.fillStyle = '#E2A356'; ctx.textAlign = 'left';
     ctx.fillText('click me', sx + 4, sy + 3);
     ctx.globalAlpha = 1;
   }
@@ -614,14 +808,14 @@
     if (!selected) { inspector.hidden = true; return; }
     const w = selected;
     const steps = w.plan.slice(0, 4).map((p, i) => '<li' + (i === 0 ? ' class="now"' : '') + '>' + p.label + (p.remaining != null ? ' (' + Math.max(0, p.remaining).toFixed(1) + 's)' : '') + '</li>').join('');
-    const html = '<div><span class="k">' + w.id + '</span> · <span class="s">' + w.role + '</span></div>'
+    const html = '<div><span class="k">' + w.id + '</span> · <span class="s">' + w.role + '</span>' + (w.tools ? ' · carrying tools' : '') + '</div>'
       + '<div>goal: ' + w.goal + '</div>'
-      + (w.job ? '<div>job: {site: "' + w.job.id + '", cost: ' + w.job.cost + 'cr' + (w.job.batch ? ', batch: true' : '') + '}</div>' : '')
+      + (w.job ? '<div>job: {site: "' + w.job.id + '", cost: ' + w.job.cost + 'cr' + (w.job.batch ? ', batch: true' : '') + (w.job.repair ? ', repair: true' : '') + '}</div>' : '')
       + '<ol>' + (steps || '<li>plan complete</li>') + '</ol>';
     if (html !== inspHtml) { inspHtml = html; inspector.innerHTML = html; }
     inspector.hidden = false;
-    const ix = Math.max(8, Math.min(w.x - scrollX + 16, innerWidth - 260));
-    let iy = w.y - scrollY - 46 - inspector.offsetHeight;
+    const ix = Math.max(8, Math.min(w.x - scrollX + 16, innerWidth - 270));
+    let iy = w.y - scrollY - 50 - inspector.offsetHeight;
     if (iy < 8) iy = w.y - scrollY + 16;
     inspector.style.transform = 'translate(' + ix + 'px, ' + iy + 'px)';
   }
@@ -633,12 +827,11 @@
     const card = el.closest ? el.closest('[data-job].done') : null;
     if (card) {
       const j = jobs.find(x => x.el === card);
-      if (j && j.state === 'done' && !j.glyph) { fail(j); return; }
-      if (j && j.glyph && j.state === 'done') { fail(j); return; }
+      if (j && j.state === 'done' && j.id !== 'edu') { fail(j); return; }
     }
     let best = null, bd = touch ? 44 : 32;
     for (const w of workers) {
-      const d = Math.hypot(w.x - (e.pageX), w.y - 16 - e.pageY);
+      const d = Math.hypot(w.x - e.pageX, w.y - 18 - e.pageY);
       if (d < bd) { bd = d; best = w; }
     }
     if (best !== selected) selT = 0;
@@ -648,7 +841,7 @@
 
   /* ---------- boot ---------- */
   function resize() {
-    let dpr = Math.min(devicePixelRatio || 1, 2);
+    const dpr = Math.min(devicePixelRatio || 1, 2);
     canvas.width = Math.floor(innerWidth * dpr);
     canvas.height = Math.floor(innerHeight * dpr);
     canvas._dpr = dpr;
@@ -667,20 +860,20 @@
   }, { rootMargin: '30% 0px 55% 0px' });
   for (const j of jobs) io.observe(j.el);
 
-  // never hold content hostage
-  setTimeout(() => {
-    queue.length = 0;
+  // rolling failsafe: nothing stays unreadable for long, repairs get extra headroom
+  setInterval(() => {
+    const now = performance.now();
     for (const j of jobs) {
-      if (j.state === 'pending' || j.state === 'queued') {
-        j.state = 'done'; j.el.classList.add('done'); j.el.classList.remove('rendering');
+      const cap = j.repair ? 24000 : 14000;
+      if ((j.state === 'queued' || j.state === 'rendering') && now - j.tMark > cap) {
+        j.state = 'done'; j.repair = false;
+        j.el.classList.add('done'); j.el.classList.remove('rendering');
       }
     }
-  }, 14000);
+  }, 5000);
 
-  // dispatcher takes the desk; crew reports in
   for (const w of workers) w.role === 'dispatcher' ? deskPlan(w) : idle(w);
-
-  window.__pipeline = { workers, jobs, queue, camp, get credits() { return credits; } };
+  window.__pipeline = { workers, jobs, queue, camp, version: 3, get credits() { return credits; } };
 
   /* ---------- main loop ---------- */
   let last = performance.now(), visible = true;
@@ -705,14 +898,22 @@
 
     drawCamp(t, viewTop, viewBot);
 
-    // rendering markers under in-progress jobs
+    // red marker over failed sites awaiting repair
+    for (const j of jobs) {
+      if (!j.repair || j.ground < viewTop || j.ground > viewBot) continue;
+      const my = j.ground - j.el.offsetHeight - 10 + Math.sin(t / 300) * 2;
+      ctx.fillStyle = '#D97462';
+      ctx.fillRect(j.x0 + 6, my - 10, 3, 7); ctx.fillRect(j.x0 + 6, my - 1, 3, 3);
+    }
+
+    // progress bars
     for (const w of workers) {
       if (!w.job) continue;
       const st = w.plan[0];
       if (st && st.kind === 'render' && w.job.ground > viewTop && w.job.ground < viewBot) {
-        const frac = 1 - st.remaining / w.job.effort;
-        ctx.fillStyle = '#233029'; ctx.fillRect(w.x - 16, w.y + 5, 32, 3);
-        ctx.fillStyle = w.role === 'fallback' ? '#6FA8DF' : '#41A98F';
+        const frac = 1 - st.remaining / (w.job.repair ? w.job.effort * 0.8 : w.job.effort);
+        ctx.fillStyle = '#262A31'; ctx.fillRect(w.x - 16, w.y + 5, 32, 3);
+        ctx.fillStyle = w.job.repair || w.job.provider === 'fallback' ? '#7FA7D4' : '#E2A356';
         ctx.fillRect(w.x - 16, w.y + 5, Math.round(32 * frac), 3);
       }
     }
@@ -724,8 +925,24 @@
       p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 70 * dt;
       if (p.y < viewTop || p.y > viewBot) continue;
       ctx.globalAlpha = Math.min(1, p.life * 2);
-      ctx.fillStyle = p.red ? '#D97462' : '#41A98F';
-      ctx.fillRect(Math.round(p.x), Math.round(p.y), 3, 3);
+      ctx.fillStyle = p.c; ctx.fillRect(Math.round(p.x), Math.round(p.y), 3, 3);
+    }
+    ctx.globalAlpha = 1;
+    for (let i = embers.length - 1; i >= 0; i--) {
+      const p = embers[i]; p.life -= dt;
+      if (p.life <= 0) { embers.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      ctx.globalAlpha = Math.min(1, p.life * 1.4);
+      ctx.fillStyle = Math.random() < 0.5 ? '#E2A356' : '#C5584A';
+      ctx.fillRect(Math.round(p.x), Math.round(p.y), 2, 2);
+    }
+    ctx.globalAlpha = 1;
+    for (let i = smoke.length - 1; i >= 0; i--) {
+      const s = smoke[i]; s.life -= dt; s.y += s.vy * dt;
+      if (s.life <= 0) { smoke.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.min(0.4, s.life * 0.3);
+      ctx.fillStyle = '#9BA0AB';
+      ctx.fillRect(Math.round(s.x), Math.round(s.y), 3, 3);
     }
     ctx.globalAlpha = 1;
     for (let i = coins.length - 1; i >= 0; i--) {
@@ -733,33 +950,24 @@
       if (c.life <= 0) { coins.splice(i, 1); continue; }
       if (c.y < viewTop || c.y > viewBot) continue;
       ctx.globalAlpha = Math.min(1, c.life * 1.6);
-      ctx.fillStyle = '#D9A05B';
+      ctx.fillStyle = '#E2A356';
       ctx.font = '700 11px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
       ctx.fillText('+' + c.amt + 'cr', c.x, c.y);
     }
     ctx.globalAlpha = 1;
-    for (let i = smoke.length - 1; i >= 0; i--) {
-      const s = smoke[i]; s.life -= dt; s.y += s.vy * dt;
-      if (s.life <= 0) { smoke.splice(i, 1); continue; }
-      ctx.globalAlpha = Math.min(0.5, s.life * 0.4);
-      ctx.fillStyle = '#8CA096';
-      ctx.fillRect(Math.round(s.x), Math.round(s.y), 3, 3);
-    }
-    ctx.globalAlpha = 1;
 
     for (const w of workers) {
-      if (w.y < viewTop || w.y > viewBot) continue;
-      drawWorker(w, t);
+      if (w.y < viewTop - 20 || w.y > viewBot + 20) continue;
+      drawWorker(w);
     }
 
-    // selection box
     if (selected) {
       selT = Math.min(1, selT + dt * 5);
       const w = selected;
       if (w.y > viewTop && w.y < viewBot) {
         const m = Math.round(3 + 8 * (1 - selT));
-        ctx.strokeStyle = '#D9A05B'; ctx.lineWidth = 1.5;
-        ctx.strokeRect(w.x - 10 - m, w.y - 36 - m, 20 + m * 2, 40 + m * 2);
+        ctx.strokeStyle = '#E2A356'; ctx.lineWidth = 1.5;
+        ctx.strokeRect(w.x - 11 - m, w.y - 42 - m, 22 + m * 2, 46 + m * 2);
       }
       drawInspector();
     }
