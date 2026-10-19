@@ -400,37 +400,50 @@
   const stars = [];
   for (let i = 0; i < 46; i++) stars.push([Math.random(), Math.random() * 0.5, Math.random() * 7]);
   const vill = { houses: [], slots: [], fire: { x: 0, y: 0 } };
-  const WALL_H = 30, FLOOR_D = 72, ROOF_CAP = 8;
+  const TW = 30, TH = 15, TW2 = TW / 2, TH2 = TH / 2, WALL = 34;
+  const LIE_ROT = -Math.atan2(TW2, TH2); // along the NW floor axis
+  function isoPt(ox, oy, gx, gy) { return [ox + (gx - gy) * TW2, oy + (gx + gy) * TH2]; }
   function buildVillage() {
     const W = camp.x1 - camp.x0;
-    const n = W >= 640 ? 3 : 2;
+    const n = W >= 680 ? 3 : 2;
     const types = ['bunk', 'kitchen', 'lounge'].slice(0, n);
-    const gap = 24;
-    const hw = Math.min(188, Math.max(150, (W * 0.74 - gap * (n - 1)) / n));
-    const floorBot = camp.base;
-    const floorTop = floorBot - FLOOR_D;
-    const wallTop = floorTop - WALL_H;
+    const GX = 7, GY = 5; // tiles per room
+    const roomW = (GX + GY) * TW2;
+    const gapPx = 30;
+    const floorBot = camp.base - 6;
     vill.houses = [];
     const slots = [];
-    let x = camp.x0 + 10;
+    let left = camp.x0 + 8;
     for (const type of types) {
-      const h = { type, x, w: hw, wallTop, floorTop, floorBot };
+      const ox = left + GY * TW2;            // top corner x
+      const oy = floorBot - (GX + GY) * TH2; // top corner y
+      const h = { type, ox, oy, GX, GY, left, w: roomW };
       vill.houses.push(h);
+      const P = (gx, gy) => isoPt(ox, oy, gx, gy);
       if (type === 'bunk') {
-        slots.push({ kind: 'sleep', x: x + 52, y: floorTop + 24, busyBy: null });
-        slots.push({ kind: 'sleep', x: x + 52, y: floorTop + 58, busyBy: null });
+        for (const bg of [[1.6, 1.3], [4.4, 1.3]]) {
+          const [bx, by] = P(bg[0], bg[1] + 1);
+          slots.push({ kind: 'sleep', x: bx, y: by, busyBy: null, rot: LIE_ROT, noBlanket: true, bed: [bg[0], bg[1]], house: h });
+        }
       } else if (type === 'kitchen') {
-        const tx = x + hw * 0.4, ty = floorTop + 44;
-        slots.push({ kind: 'eat', x: tx - 27, y: ty, busyBy: null, dir: 1, lift: 9 });
-        slots.push({ kind: 'eat', x: tx + 27, y: ty, busyBy: null, dir: -1, lift: 9 });
-        slots.push({ kind: 'coffee', x: x + hw * 0.78, y: floorTop + 14, busyBy: null, dir: 1 });
+        const t0 = [3.4, 2.2];
+        h.table = t0;
+        const [s1x, s1y] = P(t0[0] - 1.2, t0[1] + 0.4);
+        const [s2x, s2y] = P(t0[0] + 1.2, t0[1] + 0.4);
+        slots.push({ kind: 'eat', x: s1x, y: s1y, busyBy: null, dir: 1, lift: 9 });
+        slots.push({ kind: 'eat', x: s2x, y: s2y, busyBy: null, dir: -1, lift: 9 });
+        const [cfx, cfy] = P(5.3, 1.1);
+        slots.push({ kind: 'coffee', x: cfx, y: cfy, busyBy: null, dir: 1 });
       } else {
-        slots.push({ kind: 'tv', x: x + hw - 94, y: floorTop + 42, busyBy: null, dir: 1, lift: 11 });
-        slots.push({ kind: 'tv', x: x + hw - 76, y: floorTop + 42, busyBy: null, dir: 1, lift: 11 });
+        h.couch = [2.6, 2.6];
+        const [c1x, c1y] = P(3.1, 3.0);
+        const [c2x, c2y] = P(3.9, 3.4);
+        slots.push({ kind: 'tv', x: c1x, y: c1y, busyBy: null, dir: 1, lift: 11 });
+        slots.push({ kind: 'tv', x: c2x, y: c2y, busyBy: null, dir: 1, lift: 11 });
       }
-      x += hw + gap;
+      left += roomW + gapPx;
     }
-    vill.fire.x = Math.min(x + 44, camp.x1 - 64);
+    vill.fire.x = Math.min(left + 40, camp.x1 - 60);
     vill.fire.y = camp.base;
     for (let i = 0; i < 3; i++) slots.push({ kind: 'fire', x: vill.fire.x - 24 + i * 24, y: camp.base, busyBy: null, dir: i < 1 ? 1 : -1 });
     vill.slots = slots;
@@ -786,13 +799,15 @@
     if (st0 && st0.kind === 'live' && st0.what === 'sleep') {
       const spr0 = SPRITES[variant + '|IDLE|' + w.facial];
       if (!spr0) return;
+      const rot = (st0.slot && st0.slot.rot) || -Math.PI / 2;
       ctx.save();
-      ctx.translate(Math.round(w.x), Math.round(w.y) - 12);
-      ctx.rotate(-Math.PI / 2);
+      ctx.translate(Math.round(w.x), Math.round(w.y) - 14);
+      ctx.rotate(rot);
       ctx.drawImage(spr0, 0, 0, 16, 24, -10, -24, 32, 48);
       ctx.restore();
-      ctx.fillStyle = '#7FA7D4'; ctx.fillRect(Math.round(w.x) - 14, Math.round(w.y) - 16, 26, 10);
-      ctx.fillStyle = '#5C83AE'; ctx.fillRect(Math.round(w.x) - 14, Math.round(w.y) - 16, 26, 2);
+      if (!(st0.slot && st0.slot.noBlanket)) {
+        ctx.fillStyle = '#7FA7D4'; ctx.fillRect(Math.round(w.x) - 14, Math.round(w.y) - 16, 26, 10);
+      }
       return;
     }
     const pose = poseFor(w);
@@ -839,49 +854,77 @@
   /* ---------- the village: sky, backdrop peak, cutaway cabins, fire ---------- */
   const zzz = [];
   function px2(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
-  function drawHouseShell(h, t) {
-    px2(h.x - 8, h.wallTop - ROOF_CAP, h.w + 16, ROOF_CAP, '#3A4149');
-    px2(h.x - 8, h.wallTop - ROOF_CAP, h.w + 16, 2, '#49515B');
-    px2(h.x - 5, h.wallTop, 5, h.floorBot - h.wallTop + 3, '#262B31');
-    px2(h.x + h.w, h.wallTop, 5, h.floorBot - h.wallTop + 3, '#262B31');
-    px2(h.x - 5, h.floorBot, h.w + 10, 3, '#262B31');
-    const grad = ctx.createLinearGradient(0, h.wallTop, 0, h.floorTop);
-    grad.addColorStop(0, '#2B2420'); grad.addColorStop(1, '#3A3029');
-    ctx.fillStyle = grad; ctx.fillRect(h.x, h.wallTop, h.w, WALL_H);
-    const wins = h.w > 170 ? [0.22, 0.72] : [0.3];
-    for (const f of wins) {
-      const wx = h.x + h.w * f;
-      px2(wx - 11, h.wallTop + 6, 22, 17, '#262B31');
-      px2(wx - 9, h.wallTop + 8, 18, 13, '#141A22');
-      px2(wx - 1, h.wallTop + 8, 2, 13, '#262B31'); px2(wx - 9, h.wallTop + 13, 18, 2, '#262B31');
-      px2(wx - 7, h.wallTop + 10, 2, 2, '#D7DAE0');
+  function quad(a, b, c, d, col) {
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); ctx.closePath(); ctx.fill();
+  }
+  function isoBox(ox, oy, gx, gy, gw, gd, hpx, cols) {
+    const p = (a, b) => isoPt(ox, oy, a, b);
+    const t0 = p(gx, gy), t1 = p(gx + gw, gy), t2 = p(gx + gw, gy + gd), t3 = p(gx, gy + gd);
+    const dz = (pt) => [pt[0], pt[1] - hpx];
+    quad(dz(t0), dz(t1), dz(t2), dz(t3), cols.top);
+    quad(dz(t3), dz(t2), t2, t3, cols.left);   // front-left face
+    quad(dz(t1), dz(t2), t2, t1, cols.right);  // front-right face
+    ctx.strokeStyle = '#15161A'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(...dz(t0)); ctx.lineTo(...dz(t1)); ctx.lineTo(...dz(t2)); ctx.lineTo(...dz(t3)); ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(...dz(t2)); ctx.lineTo(...t2); ctx.moveTo(...dz(t1)); ctx.lineTo(...t1); ctx.moveTo(...dz(t3)); ctx.lineTo(...t3); ctx.stroke();
+  }
+  function drawIsoRoom(h, t) {
+    const { ox, oy, GX, GY } = h;
+    const P = (a, b) => isoPt(ox, oy, a, b);
+    // foundation under the front edges
+    const f0 = P(0, GY), f1 = P(GX, GY), f2 = P(GX, 0);
+    quad(f0, P(GX, GY), [f1[0], f1[1] + 6], [f0[0], f0[1] + 6], '#1B1E23');
+    quad(P(GX, GY), f2, [f2[0], f2[1] + 6], [f1[0], f1[1] + 6], '#15171B');
+    // floor tiles (warm planks, subtle checker)
+    for (let gx = 0; gx < GX; gx++) for (let gy = 0; gy < GY; gy++) {
+      const a = P(gx, gy), b = P(gx + 1, gy), c = P(gx + 1, gy + 1), d = P(gx, gy + 1);
+      quad(a, b, c, d, (gx + gy) % 2 ? '#453526' : '#4C3B2B');
+      ctx.strokeStyle = '#3A2D20'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
     }
-    ctx.fillStyle = '#393027';
-    ctx.fillRect(h.x, h.floorTop, h.w, FLOOR_D);
-    for (let y = h.floorTop + 7; y < h.floorBot; y += 7) px2(h.x, y, h.w, 1, '#2E2720');
-    for (let x = h.x + 30; x < h.x + h.w; x += 60) {
-      for (let y = h.floorTop + ((Math.floor((x - h.x) / 60) % 2) * 7); y < h.floorBot; y += 14) px2(x, y, 1, 7, '#2E2720');
+    // warm pool of light on the floor
+    const cmid = P(GX / 2, GY / 2);
+    const gl = ctx.createRadialGradient(cmid[0], cmid[1], 6, cmid[0], cmid[1], (GX + GY) * TW2 * 0.42);
+    gl.addColorStop(0, 'rgba(226,163,86,0.16)'); gl.addColorStop(1, 'rgba(226,163,86,0)');
+    ctx.fillStyle = gl;
+    ctx.beginPath(); ctx.moveTo(...P(0, 0)); ctx.lineTo(...P(GX, 0)); ctx.lineTo(...P(GX, GY)); ctx.lineTo(...P(0, GY)); ctx.closePath(); ctx.fill();
+    // two back walls meeting at the top corner
+    const wallSeg = (a, b, col) => quad([a[0], a[1] - WALL], [b[0], b[1] - WALL], b, a, col);
+    for (let i = 0; i < GX; i++) wallSeg(P(i, 0), P(i + 1, 0), i % 2 ? '#6B5436' : '#74603E'); // NE wall (right)
+    for (let i = 0; i < GY; i++) wallSeg(P(0, i), P(0, i + 1), i % 2 ? '#5E4A30' : '#66523A'); // NW wall (left)
+    // wall caps
+    const capN = P(GX, 0), capW = P(0, GY), capT = P(0, 0);
+    quad([capT[0], capT[1] - WALL - 4], [capN[0], capN[1] - WALL - 4], [capN[0], capN[1] - WALL], [capT[0], capT[1] - WALL], '#8A7050');
+    quad([capT[0], capT[1] - WALL - 4], [capW[0], capW[1] - WALL - 4], [capW[0], capW[1] - WALL], [capT[0], capT[1] - WALL], '#7A6246');
+    // windows on the NE wall
+    for (const wf of h.GX > 6 ? [1.4, 4.2] : [1.6]) {
+      const wa = P(wf, 0), wb = P(wf + 1.4, 0);
+      quad([wa[0], wa[1] - WALL + 6], [wb[0], wb[1] - WALL + 6], [wb[0], wb[1] - 12], [wa[0], wa[1] - 12], '#262B31');
+      quad([wa[0] + 2, wa[1] - WALL + 8], [wb[0] - 2, wb[1] - WALL + 8], [wb[0] - 2, wb[1] - 14], [wa[0] + 2, wa[1] - 14], '#141A22');
+      px2(wa[0] + 6, wa[1] - WALL + 12, 2, 2, '#D7DAE0');
     }
-    const gl = ctx.createRadialGradient(h.x + h.w / 2, h.floorTop + 16, 8, h.x + h.w / 2, h.floorTop + 16, h.w * 0.66);
-    gl.addColorStop(0, 'rgba(226,163,86,0.14)'); gl.addColorStop(1, 'rgba(226,163,86,0)');
-    ctx.fillStyle = gl; ctx.fillRect(h.x, h.wallTop, h.w, h.floorBot - h.wallTop);
+    // per-type wall dressing
     if (h.type === 'kitchen') {
-      const fx0 = h.x + h.w * 0.62;
-      px2(fx0, h.floorTop - 20, 17, 32, '#C3C8D2'); px2(fx0 + 2, h.floorTop - 9, 13, 1, '#7E8490'); px2(fx0 + 13, h.floorTop - 16, 2, 5, '#7E8490');
-      const cx0 = h.x + h.w * 0.82;
-      px2(cx0 - 16, h.floorTop - 8, 36, 12, '#30363D'); px2(cx0 - 16, h.floorTop - 10, 36, 3, '#3A4149');
-      px2(cx0 + 6, h.floorTop - 19, 10, 9, '#15161A'); px2(cx0 + 8, h.floorTop - 15, 3, 3, '#C5584A');
-      px2(cx0 - 12, h.floorTop - 14, 5, 4, '#ECEEF2'); px2(cx0 - 5, h.floorTop - 14, 5, 4, '#8A5B35');
-    } else if (h.type === 'lounge') {
-      const bs = h.x + 20;
-      px2(bs - 10, h.floorTop - 22, 24, 34, '#4A3620');
-      for (let r = 0; r < 3; r++) { px2(bs - 8, h.floorTop - 17 + r * 10, 20, 1, '#33261A'); px2(bs - 7 + (r % 2) * 4, h.floorTop - 25 + (r + 1) * 10, 5, 6, ['#C5584A', '#7FA7D4', '#E2A356'][r]); px2(bs + 1 + (r % 3) * 3, h.floorTop - 25 + (r + 1) * 10, 4, 6, '#9BA0AB'); }
+      // fridge + counter against the NW wall
+      isoBox(ox, oy, 0.2, 0.3, 0.9, 0.9, 30, { top: '#D7DAE0', left: '#C3C8D2', right: '#9BA0AB' });
+      isoBox(ox, oy, 0.2, 1.5, 0.9, 1.6, 14, { top: '#3A4149', left: '#30363D', right: '#262B31' });
+      const [mx, my] = P(0.6, 2.0);
+      px2(mx - 4, my - 24, 9, 8, '#15161A'); px2(mx - 2, my - 21, 3, 3, '#C5584A');
+    } else if (h.type === 'bunk') {
+      const [lx, ly] = P(0.6, 3.8);
+      px2(lx - 1, ly - 30, 3, 22, '#4A3620'); px2(lx - 5, ly - 37, 11, 8, '#E2A356');
+      ctx.globalAlpha = 0.12; px2(lx - 14, ly - 30, 30, 24, '#E2A356'); ctx.globalAlpha = 1;
     } else {
-      px2(h.x + h.w - 30, h.floorTop - 16, 3, 16, '#4A3620'); px2(h.x + h.w - 34, h.floorTop - 23, 11, 8, '#E2A356');
-      ctx.globalAlpha = 0.1; px2(h.x + h.w - 44, h.floorTop - 14, 31, 22, '#E2A356'); ctx.globalAlpha = 1;
+      // bookshelf against NW wall
+      isoBox(ox, oy, 0.2, 0.4, 0.8, 1.8, 28, { top: '#5B4328', left: '#4A3620', right: '#3B2B19' });
+      const [bx, by] = P(0.6, 1.3);
+      for (let r = 0; r < 3; r++) { px2(bx - 7, by - 24 + r * 8, 5, 6, ['#C5584A', '#7FA7D4', '#E2A356'][r]); px2(bx - 1, by - 24 + r * 8, 4, 6, '#9BA0AB'); }
     }
+    // name plate above the corner
     ctx.fillStyle = '#9BA0AB'; ctx.font = '600 9px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
-    ctx.fillText({ bunk: 'BUNKHOUSE', kitchen: 'KITCHEN', lounge: 'LOUNGE' }[h.type], h.x + h.w / 2, h.wallTop - ROOF_CAP - 4);
+    const nameAt = P(GX / 2, 0);
+    ctx.fillText({ bunk: 'BUNKHOUSE', kitchen: 'KITCHEN', lounge: 'LOUNGE' }[h.type], nameAt[0], nameAt[1] - WALL - 10);
   }
 
   function drawVillage(t, viewTop, viewBot) {
@@ -892,7 +935,7 @@
     for (let i = 0; i < stars.length; i++) {
       const [sx, sy, sp] = stars[i];
       ctx.globalAlpha = 0.25 + 0.55 * Math.abs(Math.sin(t / 900 + sp));
-      px2(camp.x0 + sx * W, camp.top + 4 + sy * 70, 2, 2, '#D7DAE0');
+      px2(camp.x0 + sx * W, camp.top + 4 + sy * 60, 2, 2, '#D7DAE0');
     }
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#1C1F25';
@@ -902,59 +945,69 @@
     const pkx = camp.x0 + W * 0.9, pky = camp.base - 136;
     px2(pkx - 2, pky - 1, 4, 2, '#E8EAEE'); px2(pkx - 5, pky + 1, 10, 2, '#E8EAEE'); px2(pkx - 8, pky + 3, 16, 2, '#AEB4C0');
     px2(pkx + 2, pky - 14, 1, 13, '#9BA0AB'); px2(pkx + 3, pky - 14, 6, 4, '#C5584A');
-    for (const fx of [0.82, 0.97]) {
+    for (const fx of [0.84, 0.97]) {
       const txp = camp.x0 + W * fx, typ = camp.base;
       px2(txp - 1, typ - 5, 2, 5, '#17191D');
       px2(txp - 4, typ - 9, 8, 4, '#20262C'); px2(txp - 3, typ - 12, 6, 3, '#20262C'); px2(txp - 1, typ - 14, 2, 2, '#20262C');
     }
+    // dirt path along the fronts
     ctx.fillStyle = '#2A251F';
-    for (let x = camp.x0 + 6; x < vill.fire.x + 30; x += 10) px2(x, camp.base + 1, 6, 2, '#2A251F');
-    for (const h of vill.houses) drawHouseShell(h, t);
+    for (let x = camp.x0 + 6; x < vill.fire.x + 30; x += 10) px2(x, camp.base + 2, 6, 2, '#2A251F');
+    for (const h of vill.houses) drawIsoRoom(h, t);
   }
 
   function drawVillageFront(t, viewTop, viewBot) {
     if (camp.top > viewBot || camp.base < viewTop) return;
     const items = [];
     for (const h of vill.houses) {
+      const P = (a, b) => isoPt(h.ox, h.oy, a, b);
       if (h.type === 'bunk') {
-        for (const by of [h.floorTop + 24, h.floorTop + 58]) {
-          items.push({ y: by, draw: () => {
-            px2(h.x + 18, by - 15, 68, 19, '#4A3620');
-            px2(h.x + 20, by - 13, 64, 13, '#C3C8D2');
-            px2(h.x + 21, by - 12, 13, 11, '#ECEEF2');
-            px2(h.x + 40, by - 13, 44, 13, '#7FA7D4'); px2(h.x + 40, by - 13, 44, 3, '#5C83AE');
-            px2(h.x + 16, by - 17, 4, 21, '#33261A');
+        for (const [bgx, bgy] of [[1.6, 1.3], [4.4, 1.3]]) {
+          const base = P(bgx + 0.5, bgy + 1.2);
+          items.push({ y: base[1] - 8, draw: () => {
+            isoBox(h.ox, h.oy, bgx, bgy, 1.1, 2.1, 10, { top: '#C3C8D2', left: '#4A3620', right: '#3B2B19' });
+            const pa = P(bgx + 0.1, bgy + 0.1), pb = P(bgx + 1.0, bgy + 0.1), pc = P(bgx + 1.0, bgy + 0.7), pd = P(bgx + 0.1, bgy + 0.7);
+            quad([pa[0], pa[1] - 12], [pb[0], pb[1] - 12], [pc[0], pc[1] - 12], [pd[0], pd[1] - 12], '#ECEEF2');
+          }});
+          const blk = P(bgx + 0.55, bgy + 1.5);
+          items.push({ y: blk[1] + 6, draw: () => {
+            const a = P(bgx, bgy + 0.8), b = P(bgx + 1.1, bgy + 0.8), c = P(bgx + 1.1, bgy + 2.1), d = P(bgx, bgy + 2.1);
+            quad([a[0], a[1] - 11], [b[0], b[1] - 11], [c[0], c[1] - 10], [d[0], d[1] - 10], '#7FA7D4');
+            ctx.strokeStyle = '#5C83AE'; ctx.beginPath(); ctx.moveTo(a[0], a[1] - 11); ctx.lineTo(b[0], b[1] - 11); ctx.stroke();
           }});
         }
-        items.push({ y: h.floorBot - 2, draw: () => { px2(h.x + h.w - 34, h.floorBot - 8, 22, 4, '#5B4834'); }});
       } else if (h.type === 'kitchen') {
-        const tx = h.x + h.w * 0.4, ty = h.floorTop + 44;
-        items.push({ y: ty + 2, draw: () => {
-          px2(tx - 36, ty - 8, 72, 18, '#4A3A2A'); px2(tx - 32, ty - 5, 64, 12, '#5B4834');
-          px2(tx - 23, ty - 21, 46, 15, '#5B4328'); px2(tx - 23, ty - 23, 46, 4, '#6B5436');
-          px2(tx - 20, ty - 6, 4, 8, '#4A3620'); px2(tx + 16, ty - 6, 4, 8, '#4A3620');
-          px2(tx - 9, ty - 26, 8, 4, '#C97F1E'); px2(tx + 3, ty - 25, 7, 3, '#ECEEF2');
-          for (const sx of [tx - 27, tx + 27]) { px2(sx - 6, ty - 10, 12, 4, '#5B4328'); px2(sx - 5, ty - 6, 2, 7, '#4A3620'); px2(sx + 3, ty - 6, 2, 7, '#4A3620'); }
+        const [tgx, tgy] = h.table;
+        const tb = P(tgx, tgy + 0.6);
+        items.push({ y: tb[1], draw: () => {
+          isoBox(h.ox, h.oy, tgx - 0.8, tgy - 0.5, 1.6, 1.1, 14, { top: '#6B5436', left: '#5B4328', right: '#4A3620' });
+          const bo = P(tgx - 0.2, tgy - 0.1);
+          px2(bo[0] - 4, bo[1] - 18, 8, 4, '#C97F1E'); px2(bo[0] + 6, bo[1] - 16, 6, 3, '#ECEEF2');
+          for (const sg of [[tgx - 1.3, tgy + 0.2], [tgx + 1.0, tgy + 0.2]]) {
+            isoBox(h.ox, h.oy, sg[0], sg[1], 0.5, 0.5, 8, { top: '#5B4328', left: '#4A3620', right: '#3B2B19' });
+          }
         }});
       } else {
-        const cy = h.floorTop + 42, cxp = h.x + h.w - 86;
-        items.push({ y: cy + 4, draw: () => {
-          px2(cxp - 12, cy - 22, 10, 26, '#A3663C');
-          px2(cxp - 4, cy - 16, 38, 15, '#8A5230'); px2(cxp - 4, cy - 20, 38, 6, '#A3663C');
-          px2(cxp - 4, cy + 2, 38, 3, '#6E4226');
+        const [cgx, cgy] = h.couch;
+        const cb = P(cgx + 0.4, cgy + 0.9);
+        items.push({ y: cb[1], draw: () => {
+          isoBox(h.ox, h.oy, cgx - 0.2, cgy - 0.3, 0.5, 1.8, 20, { top: '#A3663C', left: '#8A5230', right: '#6E4226' }); // back
+          isoBox(h.ox, h.oy, cgx + 0.3, cgy - 0.3, 0.7, 1.8, 10, { top: '#A3663C', left: '#8A5230', right: '#6E4226' }); // seat
         }});
-        items.push({ y: cy + 10, draw: () => {
-          const tvx = h.x + h.w - 32;
-          px2(tvx - 4, cy, 26, 4, '#4A3620');
-          px2(tvx, cy - 24, 20, 23, '#15161A');
+        const tvp = P(5.6, 1.2);
+        items.push({ y: tvp[1] + 2, draw: () => {
+          isoBox(h.ox, h.oy, 5.1, 0.6, 1.1, 0.7, 8, { top: '#4A3620', left: '#3B2B19', right: '#33261A' });
+          const tv = P(5.6, 1.0);
+          px2(tv[0] - 11, tv[1] - 34, 22, 25, '#15161A');
           const sc = Math.floor(t / 150);
           const cols = ['#7FA7D4', '#E2A356', '#D7DAE0', '#30363D', '#C5584A'];
-          for (let i = 0; i < 6; i++) px2(tvx + 2 + (i % 2) * 8, cy - 21 + Math.floor(i / 2) * 7, 7, 6, cols[(sc + i * 2) % cols.length]);
-          ctx.globalAlpha = 0.07 + 0.04 * Math.sin(t / 300); px2(tvx - 26, cy - 28, 26, 30, '#7FA7D4'); ctx.globalAlpha = 1;
+          for (let i = 0; i < 6; i++) px2(tv[0] - 9 + (i % 2) * 9, tv[1] - 31 + Math.floor(i / 2) * 7, 8, 6, cols[(sc + i * 2) % cols.length]);
+          ctx.globalAlpha = 0.08 + 0.04 * Math.sin(t / 300); px2(tv[0] - 30, tv[1] - 30, 20, 26, '#7FA7D4'); ctx.globalAlpha = 1;
         }});
-        items.push({ y: h.floorBot - 2, draw: () => {
-          px2(h.x + 8, h.floorBot - 11, 9, 7, '#C97F1E');
-          px2(h.x + 5, h.floorBot - 22, 15, 11, '#2E4A33'); px2(h.x + 9, h.floorBot - 26, 7, 6, '#365A3E');
+        const pl = P(0.6, 4.3);
+        items.push({ y: pl[1] + 2, draw: () => {
+          px2(pl[0] - 5, pl[1] - 9, 10, 8, '#C97F1E');
+          px2(pl[0] - 8, pl[1] - 20, 16, 11, '#2E4A33'); px2(pl[0] - 4, pl[1] - 24, 8, 6, '#365A3E');
         }});
       }
     }
@@ -1073,7 +1126,7 @@
   }, 5000);
 
   for (const w of workers) w.role === 'dispatcher' ? deskPlan(w) : idle(w);
-  window.__pipeline = { workers, jobs, queue, camp, version: 10, get credits() { return credits; } };
+  window.__pipeline = { workers, jobs, queue, camp, version: 11, get credits() { return credits; } };
 
   /* ---------- main loop ---------- */
   let last = performance.now(), visible = true;
