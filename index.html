@@ -435,20 +435,419 @@
     for (let i = 0; i < 3; i++) slots.push({ kind: 'fire', x: vill.fire.x - 24 + i * 24, y: camp.base, busyBy: null, dir: i < 1 ? 1 : -1 });
     vill.slots = slots;
   }
+  function releaseSlot(w) {
+    for (const sl of vill.slots) if (sl.busyBy === w) sl.busyBy = null;
+  }
 
+  /* ---------- workers ---------- */
+  const N = innerWidth < 768 ? 9 : 16;
+  const workers = [];
+  const roles = (i) => i === 0 ? 'dispatcher' : (i % 4 === 3 ? 'fallback' : 'primary');
+  for (let i = 0; i < N; i++) {
+    const left = i % 2 === 0;
+    workers.push({
+      id: 'worker/' + String(i + 1).padStart(2, '0'),
+      role: roles(i), x: left ? -14 - i * 6 : innerWidth + 14 + i * 6, y: 150,
+      dir: left ? 1 : -1, speed: 155 + Math.random() * 70, climb: 270,
+      plan: [], busy: false, job: null, animT: Math.random() * 9, workT: 0,
+      goal: 'reporting in', hiking: false, tools: false, facial: i % 3,
+    });
+  }
+
+  /* ---------- queue + HUD ---------- */
+  const queue = [];
+  let credits = 0, shownCredits = 0;
+  const hq = document.getElementById('hq'), hr = document.getElementById('hr'), hc = document.getElementById('hc');
+  function toast(html, cls) {
+    const t = document.createElement('div');
+    t.className = 'toast' + (cls ? ' ' + cls : '');
+    t.innerHTML = html;
+    const box = document.getElementById('toasts');
+    box.appendChild(t);
+    while (box.children.length > 4) box.removeChild(box.firstChild);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .5s'; }, 3600);
+    setTimeout(() => t.remove(), 4200);
+  }
+  function hudTick() {
+    hq.textContent = String(queue.length);
+    hr.textContent = String(workers.filter(w => w.job).length);
+    if (shownCredits !== credits) {
+      shownCredits += Math.sign(credits - shownCredits) * Math.max(1, Math.round(Math.abs(credits - shownCredits) / 6));
+      hc.textContent = shownCredits + ' cr';
+    }
+  }
+
+  /* ---------- plans ---------- */
+  function pathTo(w, x, y) {
+    const steps = [];
+    if (Math.abs(y - w.y) > 4) steps.push({ kind: 'climbTo', y, label: (y > w.y ? 'descend to ' : 'climb to ') + 'y:' + Math.round(y) });
+    steps.push({ kind: 'goto', x, label: 'walk to x:' + Math.round(x) });
+    return steps;
+  }
+  function assign(w, j) {
+    releaseSlot(w);
+    w.busy = true; w.hiking = false; w.job = j;
+    j.state = 'rendering'; j.tMark = performance.now();
+    j.el.classList.add('rendering');
+    if (j.repair) {
+      w.goal = 'repair ' + j.id;
+      w.plan = [
+        ...pathTo(w, j.workX, j.ground),
+        { kind: 'inspect', remaining: 1.9, label: 'inspect the failure' },
+        { kind: 'goto', x: -36, label: 'fetch tools + logs' },
+        { kind: 'fetch', remaining: 1.1, label: 'grab toolbox, pull logs' },
+        { kind: 'goto', x: j.workX, label: 'carry back to ' + j.id },
+        { kind: 'readlogs', remaining: 1.5, label: 'read the trace' },
+        { kind: 'render', job: j, remaining: j.effort * 0.8, label: 'repair (fallback)' },
+      ];
+    } else {
+      w.goal = 'render ' + j.id + ' on ' + j.provider;
+      w.plan = [...pathTo(w, j.workX, j.ground), { kind: 'render', job: j, remaining: j.effort, label: 'render (' + j.provider + ')' }];
+    }
+  }
+  function charge(j) {
+    const amt = j.batch ? Math.ceil(j.cost / 2) : j.cost;
+    credits += amt;
+    coins.push({ x: j.workX, y: j.ground - 30, vy: -46, life: 1, amt });
+  }
+  function complete(w) {
+    const j = w.job;
+    const alreadyDone = j.state === 'done';
+    const wasRepair = j.repair;
+    j.state = 'done'; j.repair = false;
+    j.el.classList.remove('rendering'); j.el.classList.add('done');
+    if (!alreadyDone) charge(j);
+    if (wasRepair) {
+      toast('<b>fixed</b> · ' + j.id + ' redeployed on fallback', 'blue');
+      for (let i = 0; i < 12; i++) dust.push({ x: j.workX + (Math.random() - 0.5) * 60, y: j.ground - 10 - Math.random() * 20, vx: (Math.random() - 0.5) * 50, vy: -40 - Math.random() * 40, life: 0.6 + Math.random() * 0.4, c: '#7FA7D4' });
+    }
+    w.job = null; w.busy = false; w.tools = false;
+    idle(w);
+    pump();
+  }
+  function idle(w) {
+    if (w.role === 'dispatcher') { deskPlan(w); return; }
+    w.busy = false; w.tools = false;
+    if (queue.length) return;
+    const free = vill.slots.filter(sl => !sl.busyBy);
+    if (free.length && Math.random() < 0.72) {
+      const sl = free[Math.floor(Math.random() * free.length)];
+      sl.busyBy = w;
+      w.hiking = true;
+      const label = { sleep: 'sleep', eat: 'eat dinner', tv: 'watch tv', coffee: 'sip coffee', fire: 'campfire' }[sl.kind];
+      w.goal = 'off shift → ' + label;
+      w.plan = [...pathTo(w, sl.x, sl.y), { kind: 'live', what: sl.kind, slot: sl, remaining: 9 + Math.random() * 14, label }];
+    } else {
+      w.goal = Math.random() < 0.5 ? 'loiter' : 'patrol';
+      const dx = (Math.random() < 0.5 ? -1 : 1) * (50 + Math.random() * 240);
+      w.plan = [{ kind: 'goto', x: Math.max(-30, Math.min(vw() + 30, w.x + dx)), label: 'wander' }, { kind: 'pause', remaining: 0.8 + Math.random() * 2.5, label: 'pause' }];
+    }
+  }
+  function deskPlan(w) {
+    w.goal = 'route jobs · keep the queue moving';
+    const j0 = jobs[0];
+    w.plan = [...pathTo(w, j0 ? j0.x0 - 46 : 60, j0 ? j0.ground : 160), { kind: 'pause', remaining: 6 + Math.random() * 5, label: 'dispatching' }];
+  }
+
+  function pump() {
+    const eligible = queue.filter(j => !j.glyph && !j.batch && !j.repair);
+    if (eligible.length >= 4) {
+      for (const j of eligible) j.batch = true;
+      toast('batched <b>' + eligible.length + ' jobs</b> · −50% · the batch lane says hi');
+    }
+    for (let qi = 0; qi < queue.length;) {
+      const j = queue[qi];
+      if (j.state !== 'queued') { queue.splice(qi, 1); continue; }
+      const want = j.provider === 'primary' ? 'primary' : 'fallback';
+      let pool = workers.filter(w => !w.busy && w.role === want);
+      if (!pool.length) pool = workers.filter(w => !w.busy && w.role !== 'dispatcher');
+      let best = null, bd = Infinity;
+      for (const w of pool) {
+        const d = Math.abs(w.x - j.workX) + Math.abs(w.y - j.ground) * 2;
+        if (d < bd) { bd = d; best = w; }
+      }
+      if (!best) { qi++; continue; }
+      queue.splice(qi, 1);
+      assign(best, j);
+    }
+  }
+  function enqueue(j) {
+    if (j.state !== 'pending') return;
+    j.state = 'queued'; j.tMark = performance.now();
+    queue.push(j);
+    pump();
+  }
+
+  /* ---------- failure → inspect → fetch → repair ---------- */
+  let firstFailDone = false;
+  function fail(j) {
+    const refund = j.batch ? Math.ceil(j.cost / 2) : j.cost;
+    credits -= refund;
+    toast('<b>provider_error</b> · ' + j.id + ' on primary · refunded ' + refund + ' cr · dispatching repair', 'warn');
+    j.el.classList.remove('done'); j.el.classList.add('failing');
+    for (let i = 0; i < 14; i++) dust.push({ x: j.x0 + Math.random() * (j.x1 - j.x0), y: j.ground - Math.random() * 24, vx: (Math.random() - 0.5) * 60, vy: -30 - Math.random() * 50, life: 0.5 + Math.random() * 0.4, c: '#D97462' });
+    setTimeout(() => { j.el.classList.remove('failing'); j.el.classList.add('rendering'); }, 380);
+    j.state = 'pending'; j.provider = 'fallback'; j.batch = false; j.repair = true;
+    firstFailDone = true;
+    setTimeout(() => enqueue(j), 420);
+  }
+
+  const dust = [], coins = [], smoke = [], embers = [];
+
+  /* ---------- stepping ---------- */
+  function step(w, dt) {
+    const s = w.plan[0];
+    if (!s) { w.role === 'dispatcher' ? deskPlan(w) : idle(w); return; }
+    switch (s.kind) {
+      case 'climbTo': {
+        const dy = s.y - w.y;
+        if (Math.abs(dy) <= 3) { w.plan.shift(); break; }
+        w.y += Math.sign(dy) * Math.min(Math.abs(dy), w.climb * dt);
+        break;
+      }
+      case 'goto': {
+        const dx = s.x - w.x;
+        if (Math.abs(dx) <= 3) { w.plan.shift(); break; }
+        w.dir = dx > 0 ? 1 : -1;
+        w.x += w.dir * Math.min(Math.abs(dx), w.speed * dt);
+        break;
+      }
+      case 'live': {
+        s.remaining -= dt;
+        if (s.slot && s.slot.dir) w.dir = s.slot.dir;
+        if (s.what === 'sleep' && Math.random() < dt * 0.8) zzz.push({ x: w.x + 10, y: w.y - 34, vy: -11, life: 1.7 });
+        if (s.what === 'coffee' && Math.random() < dt * 1.5) smoke.push({ x: w.x + w.dir * 8, y: w.y - 38, vy: -9, life: 0.9 });
+        if (queue.length || s.remaining <= 0) { releaseSlot(w); w.plan = []; }
+        break;
+      }
+      case 'inspect': case 'readlogs': {
+        s.remaining -= dt; w.workT += dt;
+        if (s.remaining <= 0) w.plan.shift();
+        break;
+      }
+      case 'fetch': {
+        s.remaining -= dt;
+        if (s.remaining <= 0) { w.tools = true; w.plan.shift(); }
+        break;
+      }
+      case 'render': {
+        w.workT += dt; s.remaining -= dt;
+        if (Math.random() < dt * 16) dust.push({ x: w.x + w.dir * 14 + (Math.random() - 0.5) * 8, y: w.y - 16 - Math.random() * 14, vx: (Math.random() - 0.5) * 24, vy: -20 - Math.random() * 26, life: 0.4 + Math.random() * 0.4, c: s.job.repair ? '#7FA7D4' : '#E2A356' });
+        if (s.remaining <= 0) { w.plan.shift(); complete(w); }
+        break;
+      }
+      case 'pause': {
+        s.remaining -= dt;
+        if (s.remaining <= 0) w.plan.shift();
+        break;
+      }
+    }
+  }
+
+  /* ---------- pixel-map sprites (outlined, pre-rendered) ---------- */
+  const BASE = [
+    '....OOOOOO......',
+    '...OYYHHHHO.....',
+    '..OYHHHHHHHO....',
+    '..OhhhhhhhhhO...',
+    '.OhhhhhhhhhhhO..',
+    '.OOOOOOOOOOOOO..',
+    '..OASSSSSSSAO...',
+    '.OSOSSSSSSSOSO..',
+    '..OSESSSESSO....',
+    '..OSsSSSSsSO....',
+    '..OSSSSSSSSO....',
+    '..OssssssssO....',
+    '...OWWWWWWO.....',
+    '..OWWVVVVVWWO...',
+    '.OWWOVVvVVOWWO..',
+    '.OWwOVVvVVOwWO..',
+    '.OWwOVVVVVOwWO..',
+    '.OSsOvVVVvOsSO..',
+    '..OOJJJJJJJOO...',
+    '...OJJJOJJJO....',
+    '...OJjJOJjJO....',
+    '...OJJJOJJJO....',
+    '...OKKKOKKKO....',
+    '...OOOO.OOOO....',
+  ];
+  const LEGS_A = [[19,0,'..OJJJO..OJJO...'],[20,0,'..OJjJO..OjJO...'],[21,0,'..OJJJO..OJJO...'],[22,0,'..OKKKO..OKKO...'],[23,0,'..OOOOO..OOOO...']];
+  const LEGS_B = [[19,0,'...OJJO..OJJJO..'],[20,0,'...OJjO..OJjJO..'],[21,0,'...OJJO..OJJJO..'],[22,0,'...OKKO..OKKKO..'],[23,0,'...OOOO..OOOOO..']];
+  const CLEAR_R = [[14,10,'....'],[15,10,'....'],[16,10,'....'],[17,10,'....']];
+  const WORK_A_P = [...CLEAR_R,[6,12,'RrR'],[7,13,'R'],[8,13,'R'],[9,12,'SO'],[10,12,'WO'],[11,12,'WO'],[12,12,'WO'],[13,12,'WO']];
+  const WORK_B_P = [...CLEAR_R,[10,13,'RrR'],[11,14,'R'],[12,13,'SO'],[13,12,'WO'],[14,12,'WO']];
+  const INSPECT_P = [...CLEAR_R,[7,12,'OGO'],[8,12,'GGO'],[9,13,'rO'],[10,12,'WO'],[11,12,'WO'],[12,12,'WO'],[13,12,'WO']];
+  const READ_P = [[15,1,'....'],[16,1,'....'],[17,1,'....'],[15,10,'....'],[16,10,'....'],[17,10,'....'],
+    [13,4,'OPPPPPPO'],[14,4,'OPppppPO'],[15,4,'OPPPPPPO'],[16,4,'OPppppPO'],[17,4,'OOOOOOOO'],
+    [14,3,'S'],[14,12,'S']];
+  const CARRY_P = [[16,12,'S'],[17,12,'OttO'],[18,12,'TTTT'],[19,12,'TuuT'],[20,12,'OOOO'],
+    [13,0,'PP'],[14,0,'Pp'],[15,0,'Pp'],[16,0,'PP']];
+  const SIT_P = [[18,0,'..OOJJJJJJJJO...'],[19,0,'...OJJJJJJJJOO..'],[20,0,'...OJJJJJOKKO...'],[21,0,'....OOOOOOOOO...'],[22,0,'................'],[23,0,'................'],
+    [15,12,'SM'],[16,13,'M']];
+  const MUSTACHE_P = [[10,5,'AAAA']];
+  const BEARD_P = [[10,4,'A'],[10,9,'A'],[11,3,'ABBBBBBA'],[12,6,'BB']];
+  const HIKER_P = [[0,0,'................'],[1,0,'................'],[2,0,'.....OWWO.......'],
+    [3,0,'...ODDDDDDDO....'],[4,0,'...ODdDdDdDO....'],[5,0,'...OOOOOOOOO....'],
+    [13,0,'N'],[14,0,'Nn'],[15,0,'Nn'],[16,0,'N']];
+  const CLIP_P = [[15,0,'PP'],[16,0,'Pp']];
+
+  const COMMON = {
+    O: '#15161A', E: '#15161A', A: '#2B2017', B: '#8A5A36',
+    S: '#F0C090', s: '#D29A6A',
+    W: '#ECEEF2', w: '#C3C8D2',
+    J: '#4E6E9E', j: '#3C567E', K: '#262930',
+    M: '#9BA0AB', P: '#ECEEF2', p: '#C3C8D2',
+    R: '#AEB4C0', r: '#7E8490', G: '#9FC4E8',
+    T: '#C5584A', u: '#93392E', t: '#AEB4C0',
+    D: '#C5584A', d: '#93392E', N: '#7A5230', n: '#5B3D24',
+  };
+  const VARIANT_PAL = {
+    primary:    { Y: '#F6C96A', H: '#F0A832', h: '#C97F1E', V: '#E2A356', v: '#B47C3C' },
+    fallback:   { Y: '#F6C96A', H: '#F0A832', h: '#C97F1E', V: '#7FA7D4', v: '#5C83AE' },
+    dispatcher: { Y: '#FFFFFF', H: '#ECEEF2', h: '#BFC4CE', V: '#AEB4C0', v: '#8A8F99' },
+    hiker:      { Y: '#F6C96A', H: '#F0A832', h: '#C97F1E', V: '#E2A356', v: '#B47C3C' },
+  };
+  const POSES = {
+    IDLE: [], WALK_A: LEGS_A, WALK_B: LEGS_B,
+    WORK_A: WORK_A_P, WORK_B: WORK_B_P,
+    INSPECT: INSPECT_P, READ: READ_P,
+    CARRY_A: [...LEGS_A, ...CARRY_P], CARRY_B: [...LEGS_B, ...CARRY_P],
+    SIT: SIT_P,
+  };
+  const FACIAL = [[], MUSTACHE_P, BEARD_P];
+
+  function applyPatches(rows, patches) {
+    const out = rows.map(r => (r + '................').slice(0, 16));
+    for (const [ri, ci, str] of patches) {
+      out[ri] = out[ri].slice(0, ci) + str + out[ri].slice(ci + str.length);
+      out[ri] = (out[ri] + '................').slice(0, 16);
+    }
+    return out;
+  }
+  function renderMap(rows, pal) {
+    const c = document.createElement('canvas');
+    c.width = 16; c.height = 24;
+    const g = c.getContext('2d');
+    for (let y = 0; y < rows.length; y++) {
+      for (let x = 0; x < 16; x++) {
+        const ch = rows[y][x];
+        if (!ch || ch === '.') continue;
+        g.fillStyle = pal[ch] || '#FF00FF';
+        g.fillRect(x, y, 1, 1);
+      }
+    }
+    return c;
+  }
+  const SPRITES = {};
+  for (const variant of Object.keys(VARIANT_PAL)) {
+    const pal = { ...COMMON, ...VARIANT_PAL[variant] };
+    for (const pose of Object.keys(POSES)) {
+      for (let f = 0; f < FACIAL.length; f++) {
+        let rows = applyPatches(BASE, POSES[pose]);
+        rows = applyPatches(rows, FACIAL[f]);
+        if (variant === 'hiker') rows = applyPatches(rows, HIKER_P);
+        if (variant === 'dispatcher' && (pose === 'IDLE' || pose === 'WALK_A' || pose === 'WALK_B')) rows = applyPatches(rows, CLIP_P);
+        SPRITES[variant + '|' + pose + '|' + f] = renderMap(rows, pal);
+      }
+    }
+  }
+  const TOOLBOX_GROUND = (() => {
+    const rows = ['...OttO...', '..OTTTTO..', '..OTuuTO..', '..OOOOOO..'];
+    const c = document.createElement('canvas');
+    c.width = 10; c.height = 4;
+    const g = c.getContext('2d');
+    for (let y = 0; y < rows.length; y++) for (let x = 0; x < 10; x++) {
+      const ch = rows[y][x];
+      if (ch === '.') continue;
+      g.fillStyle = COMMON[ch] || '#FF00FF';
+      g.fillRect(x, y, 1, 1);
+    }
+    return c;
+  })();
+
+  function poseFor(w) {
+    const st = w.plan[0];
+    const ph = Math.floor(w.animT * 8) % 2;
+    const wk = Math.floor(w.animT * 6) % 2;
+    if (st) {
+      if (st.kind === 'live') return st.what === 'coffee' ? 'IDLE' : 'SIT';
+      if (st.kind === 'render') return wk ? 'WORK_A' : 'WORK_B';
+      if (st.kind === 'inspect') return 'INSPECT';
+      if (st.kind === 'readlogs') return 'READ';
+      const moving = st.kind === 'goto' || st.kind === 'hike' || st.kind === 'climbTo';
+      if (moving && w.tools) return ph ? 'CARRY_A' : 'CARRY_B';
+      if (moving) return ph ? 'WALK_A' : 'WALK_B';
+    }
+    return w.tools ? 'CARRY_A' : 'IDLE';
+  }
+  function drawWorker(w) {
+    const variant = w.hiking ? 'hiker' : w.role;
+    const st0 = w.plan[0];
+    if (st0 && st0.kind === 'live' && st0.what === 'sleep') {
+      const spr0 = SPRITES[variant + '|IDLE|' + w.facial];
+      if (!spr0) return;
+      ctx.save();
+      ctx.translate(Math.round(w.x), Math.round(w.y) - 12);
+      ctx.rotate(-Math.PI / 2);
+      ctx.drawImage(spr0, 0, 0, 16, 24, -10, -24, 32, 48);
+      ctx.restore();
+      ctx.fillStyle = '#7FA7D4'; ctx.fillRect(Math.round(w.x) - 14, Math.round(w.y) - 16, 26, 10);
+      ctx.fillStyle = '#5C83AE'; ctx.fillRect(Math.round(w.x) - 14, Math.round(w.y) - 16, 26, 2);
+      return;
+    }
+    const pose = poseFor(w);
+    if (pose === 'SIT') {
+      const sl = st0 && st0.slot;
+      const lift = (sl && sl.lift) || 0;
+      const spr0 = SPRITES[variant + '|IDLE|' + w.facial];
+      if (!spr0) return;
+      const x = Math.round(w.x), y = Math.round(w.y) - lift;
+      ctx.globalAlpha = 0.28; ctx.fillStyle = '#000';
+      ctx.fillRect(x - 10, Math.round(w.y) - 2, 20, 3); ctx.globalAlpha = 1;
+      ctx.save();
+      ctx.translate(x, y);
+      if (w.dir < 0) ctx.scale(-1, 1);
+      ctx.drawImage(spr0, 0, 0, 16, 18, -16, -34, 32, 36);   // head + torso, lowered
+      ctx.fillStyle = '#4E6E9E'; ctx.fillRect(-6, -8, 16, 5); // folded legs forward
+      ctx.fillStyle = '#3C567E'; ctx.fillRect(6, -8, 4, 5);
+      ctx.fillStyle = '#262930'; ctx.fillRect(10, -6, 5, 5);  // boots
+      ctx.restore();
+      if (st0 && st0.what === 'eat' && Math.random() < 0.02) dust.push({ x: w.x + w.dir * 6, y: w.y - 24, vx: 0, vy: 8, life: 0.3, c: '#C97F1E' });
+      return;
+    }
+    const spr = SPRITES[variant + '|' + pose + '|' + w.facial];
+    if (!spr) return;
+    const x = Math.round(w.x), y = Math.round(w.y);
+    ctx.globalAlpha = 0.28; ctx.fillStyle = '#000';
+    ctx.fillRect(x - 11, y - 2, 22, 3); ctx.globalAlpha = 1;
+    ctx.save();
+    ctx.translate(x, y);
+    if (w.dir < 0) ctx.scale(-1, 1);
+    ctx.drawImage(spr, 0, 0, 16, 24, -16, -47, 32, 48);
+    ctx.restore();
+    const st = w.plan[0];
+    if (st && st.kind === 'live' && st.what === 'coffee') {
+      ctx.fillStyle = '#8A5B35'; ctx.fillRect(x + w.dir * 10 - 3, y - 32, 6, 5);
+      ctx.fillStyle = '#ECEEF2'; ctx.fillRect(x + w.dir * 10 + (w.dir > 0 ? 3 : -4), y - 31, 1, 3);
+    }
+    if (st && st.kind === 'inspect') {
+      ctx.fillStyle = '#E2A356'; ctx.font = '700 13px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+      ctx.fillText('?', w.x + w.dir * 10, w.y - 52 + Math.sin(w.animT * 5) * 2);
+    }
+  }
+
+  /* ---------- the village: sky, backdrop peak, cutaway cabins, fire ---------- */
+  const zzz = [];
+  function px2(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
   function drawHouseShell(h, t) {
-    // roof cap + name plate
     px2(h.x - 8, h.wallTop - ROOF_CAP, h.w + 16, ROOF_CAP, '#3A4149');
     px2(h.x - 8, h.wallTop - ROOF_CAP, h.w + 16, 2, '#49515B');
-    // side + front edges
     px2(h.x - 5, h.wallTop, 5, h.floorBot - h.wallTop + 3, '#262B31');
     px2(h.x + h.w, h.wallTop, 5, h.floorBot - h.wallTop + 3, '#262B31');
     px2(h.x - 5, h.floorBot, h.w + 10, 3, '#262B31');
-    // back wall
     const grad = ctx.createLinearGradient(0, h.wallTop, 0, h.floorTop);
     grad.addColorStop(0, '#2B2420'); grad.addColorStop(1, '#3A3029');
     ctx.fillStyle = grad; ctx.fillRect(h.x, h.wallTop, h.w, WALL_H);
-    // window(s)
     const wins = h.w > 170 ? [0.22, 0.72] : [0.3];
     for (const f of wins) {
       const wx = h.x + h.w * f;
@@ -457,18 +856,15 @@
       px2(wx - 1, h.wallTop + 8, 2, 13, '#262B31'); px2(wx - 9, h.wallTop + 13, 18, 2, '#262B31');
       px2(wx - 7, h.wallTop + 10, 2, 2, '#D7DAE0');
     }
-    // plank floor
     ctx.fillStyle = '#393027';
     ctx.fillRect(h.x, h.floorTop, h.w, FLOOR_D);
     for (let y = h.floorTop + 7; y < h.floorBot; y += 7) px2(h.x, y, h.w, 1, '#2E2720');
     for (let x = h.x + 30; x < h.x + h.w; x += 60) {
       for (let y = h.floorTop + ((Math.floor((x - h.x) / 60) % 2) * 7); y < h.floorBot; y += 14) px2(x, y, 1, 7, '#2E2720');
     }
-    // warm light
     const gl = ctx.createRadialGradient(h.x + h.w / 2, h.floorTop + 16, 8, h.x + h.w / 2, h.floorTop + 16, h.w * 0.66);
     gl.addColorStop(0, 'rgba(226,163,86,0.14)'); gl.addColorStop(1, 'rgba(226,163,86,0)');
     ctx.fillStyle = gl; ctx.fillRect(h.x, h.wallTop, h.w, h.floorBot - h.wallTop);
-    // per-type wall furniture
     if (h.type === 'kitchen') {
       const fx0 = h.x + h.w * 0.62;
       px2(fx0, h.floorTop - 20, 17, 32, '#C3C8D2'); px2(fx0 + 2, h.floorTop - 9, 13, 1, '#7E8490'); px2(fx0 + 13, h.floorTop - 16, 2, 5, '#7E8490');
@@ -491,7 +887,6 @@
   function drawVillage(t, viewTop, viewBot) {
     if (camp.top > viewBot || camp.base < viewTop) return;
     const W = camp.x1 - camp.x0;
-    // sky
     px2(camp.x1 - 66, camp.top + 10, 18, 18, '#D7DAE0');
     px2(camp.x1 - 69, camp.top + 14, 5, 5, '#9BA0AB'); px2(camp.x1 - 58, camp.top + 20, 4, 4, '#9BA0AB');
     for (let i = 0; i < stars.length; i++) {
@@ -500,7 +895,6 @@
       px2(camp.x0 + sx * W, camp.top + 4 + sy * 70, 2, 2, '#D7DAE0');
     }
     ctx.globalAlpha = 1;
-    // backdrop peak + pines
     ctx.fillStyle = '#1C1F25';
     ctx.beginPath(); ctx.moveTo(camp.x0 + W * PEAK[0][0], camp.base);
     for (const [rt, rh] of PEAK) ctx.lineTo(camp.x0 + W * rt, camp.base - rh * 136);
@@ -513,10 +907,8 @@
       px2(txp - 1, typ - 5, 2, 5, '#17191D');
       px2(txp - 4, typ - 9, 8, 4, '#20262C'); px2(txp - 3, typ - 12, 6, 3, '#20262C'); px2(txp - 1, typ - 14, 2, 2, '#20262C');
     }
-    // dirt path along the fronts, out to the fire
     ctx.fillStyle = '#2A251F';
     for (let x = camp.x0 + 6; x < vill.fire.x + 30; x += 10) px2(x, camp.base + 1, 6, 2, '#2A251F');
-    // houses
     for (const h of vill.houses) drawHouseShell(h, t);
   }
 
@@ -571,7 +963,6 @@
     }
     items.sort((a, b) => a.y - b.y);
     for (const it of items) it.draw();
-    // campfire
     const fx = vill.fire.x, fy = vill.fire.y - 1;
     const glow = ctx.createRadialGradient(fx, fy - 4, 2, fx, fy - 4, 34);
     glow.addColorStop(0, 'rgba(226,163,86,0.22)'); glow.addColorStop(1, 'rgba(226,163,86,0)');
@@ -682,7 +1073,7 @@
   }, 5000);
 
   for (const w of workers) w.role === 'dispatcher' ? deskPlan(w) : idle(w);
-  window.__pipeline = { workers, jobs, queue, camp, version: 9, get credits() { return credits; } };
+  window.__pipeline = { workers, jobs, queue, camp, version: 10, get credits() { return credits; } };
 
   /* ---------- main loop ---------- */
   let last = performance.now(), visible = true;
