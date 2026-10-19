@@ -329,7 +329,7 @@
     <dt>ai + data</dt><dd>llm agents · generative media · recommenders · computer vision · xgboost</dd>
   </dl>
 
-  <div class="card" data-job="edu" style="margin-top:20px; cursor: default;">
+  <div class="card" data-job="edu" style="margin-top:20px">
     <h3>education <span class="tag">[2017 — 2021]</span></h3>
     <ul>
       <li><b>B.Tech, Computer Science</b> · Birla Institute of Applied Sciences</li>
@@ -916,7 +916,7 @@
     const card = el.closest ? el.closest('[data-job].done') : null;
     if (card) {
       const j = jobs.find(x => x.el === card);
-      if (j && j.state === 'done' && j.id !== 'edu') { fail(j); return; }
+      if (j && j.state === 'done') { fail(j); return; }
     }
     let best = null, bd = touch ? 44 : 32;
     for (const w of workers) {
@@ -962,7 +962,7 @@
   }, 5000);
 
   for (const w of workers) w.role === 'dispatcher' ? deskPlan(w) : idle(w);
-  window.__pipeline = { workers, jobs, queue, camp, version: 4, get credits() { return credits; } };
+  window.__pipeline = { workers, jobs, queue, camp, version: 5, get credits() { return credits; } };
 
   /* ---------- main loop ---------- */
   let last = performance.now(), visible = true;
