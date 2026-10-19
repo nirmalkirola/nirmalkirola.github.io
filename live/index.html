@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Nirmal Kirola — backend engineer at Morphic. A crew of pixel workers runs his generation pipeline to render this page.">
+<meta property="og:title" content="Nirmal Kirola — live">
+<meta property="og:description" content="This portfolio is rendered by a simulated generation pipeline: jobs queue, providers render, credits get charged, failures fall back. Off-shift, the workers climb a mountain.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nirmalkirola.github.io/live/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230E1512'/><text x='32' y='44' font-family='monospace' font-size='34' font-weight='700' text-anchor='middle' fill='%23D9A05B'>N</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<title>nirmal — live</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0C1210;
+    --panel: #121A16;
+    --border: #233029;
+    --fg: #D8E2DC;
+    --dim: #8CA096;
+    --faint: #51645A;
+    --accent: #41A98F;
+    --fallback: #6FA8DF;
+    --gold: #D9A05B;
+    --red: #D97462;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    padding-inline: 18px;
+    overflow-x: hidden;
+  }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover, a:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding-block: 56px 0; }
+
+  /* ---- job visibility states (applied only once the sim boots) ---- */
+  .sim-on [data-job]:not(.done) { opacity: 0; }
+  .sim-on [data-job].rendering { opacity: 0.22; filter: saturate(0.3); }
+  [data-job].done { opacity: 1; transition: opacity 0.5s ease, filter 0.5s ease; }
+  @keyframes glitch {
+    0% { transform: translateX(0); filter: none; }
+    20% { transform: translateX(-4px); filter: hue-rotate(80deg) saturate(3); }
+    40% { transform: translateX(3px); }
+    60% { transform: translateX(-2px); filter: hue-rotate(-60deg); }
+    100% { transform: translateX(0); filter: none; }
+  }
+  [data-job].failing { animation: glitch 0.4s steps(2); }
+
+  /* ---- content ---- */
+  header.hero { margin-bottom: 8px; }
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace; font-size: 12px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-size: clamp(40px, 8vw, 64px);
+    font-weight: 700; letter-spacing: -0.015em; line-height: 1.05;
+    margin: 0 0 16px;
+  }
+  h1 .glyph { display: inline-block; white-space: pre; }
+  h1 .dot { color: var(--accent); }
+  .chips { margin: 0 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips li {
+    font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--dim);
+    border: 1px solid var(--border); border-radius: 999px; padding: 2px 11px;
+  }
+  .lede { color: var(--dim); max-width: 60ch; margin: 22px 0 0; }
+  .lede b { color: var(--fg); font-weight: 600; }
+  .links { margin: 14px 0 0; font-family: "JetBrains Mono", monospace; font-size: 13px; }
+  .links .sep { color: var(--faint); }
+
+  .metrics {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    margin: 44px 0 0; padding: 0; list-style: none;
+  }
+  .metrics li { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; }
+  .metrics b {
+    display: block; font-family: "JetBrains Mono", monospace;
+    font-size: 21px; font-weight: 700; color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .metrics span { font-size: 12px; color: var(--dim); line-height: 1.4; display: block; margin-top: 2px; }
+
+  h2 {
+    font-family: "Bricolage Grotesque", sans-serif; font-size: 22px; font-weight: 600;
+    margin: 54px 0 4px;
+  }
+  .sub { color: var(--dim); font-size: 14px; margin: 0 0 18px; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; margin-bottom: 10px; cursor: pointer;
+  }
+  .card:hover { border-color: var(--faint); }
+  .card h3 { margin: 0; font-size: 16px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .card .tag { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--gold); }
+  .card p { margin: 4px 0 0; color: var(--dim); font-size: 14px; max-width: 70ch; }
+
+  .xp { margin: 0; padding: 0; list-style: none; }
+  .xp li { display: flex; gap: 18px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .xp li:last-child { border-bottom: none; }
+  .xp .when { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--faint); width: 102px; flex: none; padding-top: 2px; }
+  .xp b { font-weight: 600; }
+  .xp .at { color: var(--dim); }
+
+  .stackline { color: var(--dim); font-size: 14px; }
+  .stackline .mono { color: var(--fg); font-size: 13px; }
+
+  .contact { margin-top: 54px; padding: 18px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
+  .contact p { margin: 0 0 4px; }
+  .contact .mono { color: var(--fg); }
+
+  footer {
+    margin-top: 60px; padding-top: 16px; border-top: 1px solid var(--border);
+    color: var(--faint); font-size: 12.5px; font-family: "JetBrains Mono", monospace;
+  }
+  footer p { margin: 0 0 4px; }
+
+  /* the mountain lives here; the canvas draws into this rect */
+  #basecamp { height: 190px; margin-top: 10px; }
+
+  /* ---- sim canvas ---- */
+  #sim { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 5; }
+
+  /* ---- HUD ---- */
+  #hud {
+    position: fixed; top: 12px; right: 12px; z-index: 10;
+    font-family: "JetBrains Mono", monospace; font-size: 11.5px;
+    background: #0F1613EE; border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 12px; color: var(--dim); min-width: 164px;
+    font-variant-numeric: tabular-nums;
+  }
+  #hud .row { display: flex; justify-content: space-between; gap: 14px; }
+  #hud .v { color: var(--fg); }
+  #hud .credits { color: var(--gold); font-weight: 700; }
+  #hud .hd { color: var(--faint); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+  #toasts { position: fixed; top: 118px; right: 12px; z-index: 10; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .toast {
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    background: #0F1613EE; border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 4px; padding: 5px 10px; color: var(--dim); max-width: 260px;
+  }
+  .toast.warn { border-left-color: var(--red); }
+  .toast.gold { border-left-color: var(--gold); }
+  .toast b { color: var(--fg); }
+
+  #inspector {
+    position: fixed; z-index: 11; pointer-events: none;
+    font-family: "JetBrains Mono", monospace; font-size: 11px; line-height: 1.55;
+    background: #0F1613F2; border: 1px solid var(--accent); border-radius: 6px;
+    padding: 8px 11px; color: var(--dim); max-width: 250px;
+  }
+  #inspector .k { color: var(--fallback); }
+  #inspector .s { color: var(--gold); }
+  #inspector .now { color: var(--fg); }
+  #inspector ol { margin: 4px 0 0; padding-left: 16px; }
+
+  @media (max-width: 700px) {
+    .metrics { grid-template-columns: 1fr 1fr; }
+    #hud { font-size: 10.5px; min-width: 140px; }
+    .xp li { flex-direction: column; gap: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-job] { opacity: 1 !important; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="sim" aria-hidden="true"></canvas>
+
+<div id="hud" hidden>
+  <div class="hd">generation pipeline</div>
+  <div class="row"><span>queued</span><span class="v" id="hq">0</span></div>
+  <div class="row"><span>rendering</span><span class="v" id="hr">0</span></div>
+  <div class="row"><span>credits</span><span class="credits" id="hc">0 cr</span></div>
+  <div class="row"><span>on-call</span><span class="v">nirmal</span></div>
+</div>
+<div id="toasts"></div>
+<div id="inspector" hidden></div>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow" data-job="eyebrow" data-ground="bottom">backend engineer · morphic · nainital, india</p>
+    <h1 id="name" aria-label="Nirmal Kirola."><span class="glyph" data-job="g0" data-ground="bottom">N</span><span class="glyph" data-job="g1" data-ground="bottom">i</span><span class="glyph" data-job="g2" data-ground="bottom">r</span><span class="glyph" data-job="g3" data-ground="bottom">m</span><span class="glyph" data-job="g4" data-ground="bottom">a</span><span class="glyph" data-job="g5" data-ground="bottom">l</span><span class="glyph" data-job="g6" data-ground="bottom"> </span><span class="glyph" data-job="g7" data-ground="bottom">K</span><span class="glyph" data-job="g8" data-ground="bottom">i</span><span class="glyph" data-job="g9" data-ground="bottom">r</span><span class="glyph" data-job="g10" data-ground="bottom">o</span><span class="glyph" data-job="g11" data-ground="bottom">l</span><span class="glyph" data-job="g12" data-ground="bottom">a</span><span class="glyph dot" data-job="g13" data-ground="bottom">.</span></h1>
+    <ul class="chips" data-job="chips" data-ground="bottom">
+      <li>billing systems</li><li>generation pipelines</li><li>elastic rendering</li><li>typescript</li><li>postgresql</li><li>gcp</li>
+    </ul>
+    <p class="lede" data-job="lede" data-ground="bottom">I build the backend of <b>Morphic</b>, an AI creative studio —
+    and this page is rendered by a small simulation of that job: workers pick generations off a queue,
+    providers render them, credits get charged, and failures fall back. <b>Click any finished card to break it.</b></p>
+    <p class="links mono" data-job="links" data-ground="bottom">
+      <a href="https://github.com/nirmalkirola" target="_blank" rel="noopener">github</a> <span class="sep">·</span>
+      <a href="https://www.linkedin.com/in/nirmal-kirola/" target="_blank" rel="noopener">linkedin</a> <span class="sep">·</span>
+      nirmalkirola@gmail.com <span class="sep">·</span>
+      <a href="/">full portfolio →</a>
+    </p>
+  </header>
+
+  <ul class="metrics" data-job="metrics" data-ground="bottom">
+    <li><b>30+</b><span>generative models integrated</span></li>
+    <li><b>~10×</b><span>faster long renders</span></li>
+    <li><b>−50%</b><span>bulk cost via batch lane</span></li>
+    <li><b>58s→3s</b><span>burst charge p95</span></li>
+  </ul>
+
+  <h2 data-job="h-sys" data-ground="bottom">Systems in production</h2>
+  <p class="sub" data-job="sub-sys" data-ground="bottom">Each of these is a real system at Morphic. Each card below is a render job — click one to watch it fail over.</p>
+
+  <div class="card" data-job="sys-billing">
+    <h3>billing-and-credits <span class="tag">[stripe · credits]</span></h3>
+    <p>Credit system with usage tracking, packs and auto-recharge, plus the full Stripe stack: seats, pause/resume, coupons, automatic tax, dunning, enterprise catalogs. The credits HUD on this page is a homage.</p>
+  </div>
+  <div class="card" data-job="sys-pipeline">
+    <h3>generation-pipeline <span class="tag">[30+ models]</span></h3>
+    <p>Async orchestration with timeout and cancellation semantics, webhook callbacks, a routing engine with dynamic pricing, and provider fallback chains — the exact mechanic that rebuilds a card when you break it.</p>
+  </div>
+  <div class="card" data-job="sys-render">
+    <h3>elastic-video-rendering <span class="tag">[~10× faster]</span></h3>
+    <p>Heavy renders moved to per-task Cloud Run jobs with parallel chunked rendering. Long exports finish in minutes instead of timing out.</p>
+  </div>
+  <div class="card" data-job="sys-batch">
+    <h3>batch-generation-lane <span class="tag">[−50% cost]</span></h3>
+    <p>Provider-agnostic lane over the OpenAI Batch API: split pricing, premium refunds on delivery, queued and wake copilot turns. Scroll this page fast and watch the HUD batch your jobs at half price.</p>
+  </div>
+  <div class="card" data-job="sys-settle">
+    <h3>batched-credit-settlement <span class="tag">[p95 58s→3s]</span></h3>
+    <p>Serial per-org credit locks replaced with batched settlement — diagnosed from production traces, validated at 10,000-task load.</p>
+  </div>
+  <div class="card" data-job="sys-copilot">
+    <h3>copilot-subagent-architecture <span class="tag">[in production]</span></h3>
+    <p>The AI copilot's generation tools re-architected into sub-agents with model-specific tools per modality.</p>
+  </div>
+  <div class="card" data-job="sys-earlier">
+    <h3>earlier ascents <span class="tag">[2020 — 2024]</span></h3>
+    <p><b>Planify Capital</b> — led the fintech backend: payments on three rails, KYC ×19, the buy-sell trading platform.
+    <b>Lenskart</b> — realtime recommenders and eyewear computer vision; a selfie replaced an in-store fitting.</p>
+  </div>
+
+  <h2 data-job="h-xp" data-ground="bottom">Route log</h2>
+  <ul class="xp" data-job="xp">
+    <li><span class="when">2024 → now</span><span><b>Software Engineer</b> <span class="at">· Morphic — billing, generation infra, the AI copilot</span></span></li>
+    <li><span class="when">2023 → 2024</span><span><b>Software Engineer</b> <span class="at">· Planify Capital — backend lead, fintech</span></span></li>
+    <li><span class="when">2021 → 2023</span><span><b>Data Scientist I / MLE</b> <span class="at">· Lenskart — recommenders, computer vision</span></span></li>
+    <li><span class="when">2020 → 2021</span><span><b>Earlier</b> <span class="at">· Cogitate (.NET) · Sonatic AI (deep learning)</span></span></li>
+  </ul>
+
+  <p class="stackline" data-job="stack" data-ground="bottom" style="margin-top:18px"><span class="mono">stack:</span> typescript · node · python · postgresql · redis · gcp · cloud run · temporal · stripe · ffmpeg</p>
+
+  <div class="contact" data-job="contact">
+    <p><b>Open to interesting problems.</b></p>
+    <p class="mono" style="font-size:13px">nirmalkirola@gmail.com · <a href="https://github.com/nirmalkirola" target="_blank" rel="noopener">github</a> · <a href="https://www.linkedin.com/in/nirmal-kirola/" target="_blank" rel="noopener">linkedin</a></p>
+  </div>
+
+  <footer>
+    <p>backend by day, mountains on weekends — the crew below is off-shift.</p>
+    <p>curious? click a worker. terminally curious? <span style="color:var(--dim)">window.__pipeline</span> in the console.</p>
+  </footer>
+
+  <div id="basecamp" aria-hidden="true"></div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const touch = matchMedia('(pointer: coarse)').matches;
+  const canvas = document.getElementById('sim');
+  const ctx = canvas ? canvas.getContext('2d') : null;
+  const hud = document.getElementById('hud');
+  const inspector = document.getElementById('inspector');
+
+  const markAllDone = () => document.querySelectorAll('[data-job]').forEach((el) => el.classList.add('done'));
+  if (reduced || !ctx) { markAllDone(); return; }
+
+  document.documentElement.classList.add('sim-on');
+  hud.hidden = false;
+
+  /* ---------- jobs ---------- */
+  const jobs = [];
+  document.querySelectorAll('[data-job]').forEach((el) => {
+    const h = el.offsetHeight || 20;
+    jobs.push({
+      el, id: el.dataset.job, ground: 0, x0: 0, x1: 0, workX: 0,
+      state: 'pending', effort: 0.35 + Math.min(1.6, h / 160),
+      cost: Math.max(1, Math.round(h / 14)), batch: false, provider: 'primary',
+      glyph: el.classList.contains('glyph'),
+    });
+  });
+
+  const camp = { x0: 0, x1: 0, base: 0 };
+  function measure() {
+    for (const j of jobs) {
+      const r = j.el.getBoundingClientRect();
+      const top = r.top + scrollY;
+      j.ground = j.el.dataset.ground === 'bottom' ? top + r.height : top + r.height;
+      j.x0 = r.left + scrollX; j.x1 = j.x0 + r.width;
+      j.workX = j.x0 + Math.min(r.width * 0.5, 120);
+    }
+    const bc = document.getElementById('basecamp').getBoundingClientRect();
+    camp.x0 = bc.left + scrollX + 6; camp.x1 = bc.right + scrollX - 6;
+    camp.base = bc.bottom + scrollY - 10;
+  }
+  const vw = () => document.documentElement.clientWidth;
+
+  /* ---------- the ridge (basecamp mountain) ---------- */
+  const RIDGE = [[0,.1],[.1,.42],[.2,.26],[.33,.72],[.44,.46],[.55,.98],[.63,.62],[.74,.78],[.86,.34],[1,.12]];
+  const RIDGE_H = 132;
+  function ridgeY(x) { // x in doc coords -> y on ridge surface
+    const t = Math.max(0, Math.min(1, (x - camp.x0) / Math.max(1, camp.x1 - camp.x0)));
+    for (let i = 1; i < RIDGE.length; i++) {
+      if (t <= RIDGE[i][0]) {
+        const [t0, h0] = RIDGE[i - 1], [t1, h1] = RIDGE[i];
+        const f = (t - t0) / (t1 - t0);
+        return camp.base - (h0 + (h1 - h0) * f) * RIDGE_H;
+      }
+    }
+    return camp.base;
+  }
+  const seatTs = [0.5, 0.53, 0.57, 0.6, 0.33, 0.74, 0.45];
+  const campfireT = 0.565;
+
+  /* ---------- workers ---------- */
+  const N = innerWidth < 768 ? 9 : 16;
+  const workers = [];
+  const roles = (i) => i === 0 ? 'dispatcher' : (i % 4 === 3 ? 'fallback' : 'primary');
+  for (let i = 0; i < N; i++) {
+    const left = i % 2 === 0;
+    workers.push({
+      id: 'worker/' + String(i + 1).padStart(2, '0'),
+      role: roles(i), x: left ? -30 - i * 14 : innerWidth + 30 + i * 14, y: 120,
+      dir: left ? 1 : -1, speed: 150 + Math.random() * 70, climb: 260,
+      plan: [], busy: false, job: null, animT: Math.random() * 9, workT: 0,
+      goal: 'reporting in', hiking: false,
+    });
+  }
+
+  /* ---------- queue + HUD ---------- */
+  const queue = [];
+  let credits = 0, shownCredits = 0;
+  const hq = document.getElementById('hq'), hr = document.getElementById('hr'), hc = document.getElementById('hc');
+  function toast(html, cls) {
+    const t = document.createElement('div');
+    t.className = 'toast' + (cls ? ' ' + cls : '');
+    t.innerHTML = html;
+    const box = document.getElementById('toasts');
+    box.appendChild(t);
+    while (box.children.length > 4) box.removeChild(box.firstChild);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .5s'; }, 3400);
+    setTimeout(() => t.remove(), 4000);
+  }
+  function hudTick() {
+    hq.textContent = String(queue.length);
+    hr.textContent = String(workers.filter(w => w.job).length);
+    if (shownCredits !== credits) {
+      shownCredits += Math.sign(credits - shownCredits) * Math.max(1, Math.round(Math.abs(credits - shownCredits) / 6));
+      hc.textContent = shownCredits + ' cr';
+    }
+  }
+
+  /* ---------- plans ---------- */
+  function pathTo(w, x, y) {
+    const steps = [];
+    if (Math.abs(y - w.y) > 4) steps.push({ kind: 'climbTo', y, label: (y > w.y ? 'descend to ' : 'climb to ') + 'y:' + Math.round(y) });
+    steps.push({ kind: 'goto', x, label: 'walk to x:' + Math.round(x) });
+    return steps;
+  }
+  function assign(w, j) {
+    w.busy = true; w.hiking = false; w.job = j;
+    j.state = 'rendering';
+    w.goal = 'render ' + j.id + ' on ' + j.provider;
+    w.plan = [...pathTo(w, j.workX, j.ground), { kind: 'render', job: j, remaining: j.effort, label: 'render (' + j.provider + ')' }];
+  }
+  function charge(j) {
+    const amt = j.batch ? Math.ceil(j.cost / 2) : j.cost;
+    credits += amt;
+    coins.push({ x: j.workX, y: j.ground - 26, vy: -46, life: 1, amt });
+  }
+  function complete(w) {
+    const j = w.job;
+    j.state = 'done'; j.el.classList.remove('rendering'); j.el.classList.add('done');
+    charge(j);
+    w.job = null; w.busy = false;
+    idle(w);
+    pump();
+  }
+  function idle(w) {
+    if (w.role === 'dispatcher') { deskPlan(w); return; }
+    w.busy = false;
+    if (queue.length) return; // pump will grab us
+    if (Math.random() < 0.6) { // hike to basecamp
+      w.hiking = true; w.goal = 'off shift → basecamp';
+      const t = seatTs[Math.floor(Math.random() * seatTs.length)] + (Math.random() - 0.5) * 0.02;
+      const sx = camp.x0 + (camp.x1 - camp.x0) * t;
+      w.plan = [...pathTo(w, camp.x0 + 20, camp.base), { kind: 'hike', x: sx, label: 'hike the ridge' }, { kind: 'sit', remaining: 6 + Math.random() * 14, label: 'campfire' }];
+    } else {
+      w.goal = Math.random() < 0.5 ? 'loiter' : 'patrol';
+      const dx = (Math.random() < 0.5 ? -1 : 1) * (50 + Math.random() * 240);
+      w.plan = [{ kind: 'goto', x: Math.max(-30, Math.min(vw() + 30, w.x + dx)), label: 'wander' }, { kind: 'pause', remaining: 0.8 + Math.random() * 2.5, label: 'pause' }];
+    }
+  }
+  function deskPlan(w) {
+    w.goal = 'route jobs · keep the queue moving';
+    const j0 = jobs[0];
+    const dx = j0 ? j0.x0 - 46 : 60;
+    const dy = j0 ? j0.ground : 160;
+    w.plan = [...pathTo(w, dx, dy), { kind: 'pause', remaining: 6 + Math.random() * 5, label: 'dispatching' }];
+  }
+
+  function pump() {
+    // batch detection: a burst of queued jobs becomes a batch at half price
+    const eligible = queue.filter(j => !j.glyph && !j.batch);
+    if (eligible.length >= 4) {
+      for (const j of eligible) j.batch = true;
+      toast('batched <b>' + eligible.length + ' jobs</b> · −50% · the batch lane says hi', 'gold');
+    }
+    for (let qi = 0; qi < queue.length;) {
+      const j = queue[qi];
+      const pool = workers.filter(w => !w.busy && w.role !== 'dispatcher' && (j.provider === 'primary' ? w.role === 'primary' : w.role === 'fallback'));
+      // allow cross-provider help if the right pool is empty and job is primary
+      const pick = pool.length ? pool : (j.provider === 'primary' ? workers.filter(w => !w.busy && w.role === 'fallback') : []);
+      let best = null, bd = Infinity;
+      for (const w of pick) {
+        const d = Math.abs(w.x - j.workX) + Math.abs(w.y - j.ground) * 2;
+        if (d < bd) { bd = d; best = w; }
+      }
+      if (!best) { qi++; continue; }
+      queue.splice(qi, 1);
+      assign(best, j);
+    }
+  }
+  function enqueue(j) {
+    if (j.state !== 'pending') return;
+    j.state = 'queued';
+    queue.push(j);
+    pump();
+  }
+
+  /* ---------- failure / fallback (the click) ---------- */
+  function fail(j) {
+    const refund = j.batch ? Math.ceil(j.cost / 2) : j.cost;
+    credits -= refund;
+    toast('<b>provider_error</b> · ' + j.id + ' on primary · refunded ' + refund + ' cr · retrying on <b>fallback</b>', 'warn');
+    j.el.classList.remove('done'); j.el.classList.add('failing');
+    for (let i = 0; i < 14; i++) dust.push({ x: j.x0 + Math.random() * (j.x1 - j.x0), y: j.ground - Math.random() * 24, vx: (Math.random() - 0.5) * 60, vy: -30 - Math.random() * 50, life: 0.5 + Math.random() * 0.4, red: true });
+    setTimeout(() => { j.el.classList.remove('failing'); j.el.classList.add('rendering'); }, 380);
+    j.state = 'pending'; j.provider = 'fallback'; j.batch = false;
+    firstFailDone = true;
+    setTimeout(() => enqueue(j), 420);
+  }
+
+  /* ---------- particles ---------- */
+  const dust = [], coins = [], smoke = [];
+
+  /* ---------- stepping ---------- */
+  function step(w, dt) {
+    const s = w.plan[0];
+    if (!s) { w.role === 'dispatcher' ? deskPlan(w) : idle(w); return; }
+    switch (s.kind) {
+      case 'climbTo': {
+        const dy = s.y - w.y;
+        if (Math.abs(dy) <= 3) { w.plan.shift(); break; }
+        w.y += Math.sign(dy) * Math.min(Math.abs(dy), w.climb * dt);
+        break;
+      }
+      case 'goto': {
+        const dx = s.x - w.x;
+        if (Math.abs(dx) <= 3) { w.plan.shift(); break; }
+        w.dir = dx > 0 ? 1 : -1;
+        w.x += w.dir * Math.min(Math.abs(dx), w.speed * dt);
+        break;
+      }
+      case 'hike': {
+        const dx = s.x - w.x;
+        if (Math.abs(dx) <= 3) { w.plan.shift(); break; }
+        w.dir = dx > 0 ? 1 : -1;
+        w.x += w.dir * Math.min(Math.abs(dx), w.speed * 0.55 * dt);
+        w.y = ridgeY(w.x);
+        break;
+      }
+      case 'render': {
+        w.workT += dt; s.remaining -= dt;
+        if (Math.random() < dt * 16) dust.push({ x: w.x + w.dir * 14 + (Math.random() - 0.5) * 8, y: w.y - 14 - Math.random() * 16, vx: (Math.random() - 0.5) * 24, vy: -20 - Math.random() * 26, life: 0.4 + Math.random() * 0.4 });
+        if (s.remaining <= 0) { w.plan.shift(); complete(w); }
+        break;
+      }
+      case 'sit': case 'pause': {
+        s.remaining -= dt;
+        if (queue.length && s.kind === 'sit') { w.plan = []; break; } // recall from the mountain
+        if (s.remaining <= 0) w.plan.shift();
+        break;
+      }
+    }
+  }
+
+  /* ---------- pixel sprites (drawn, no sheets) ---------- */
+  const SKIN = '#E3BC94', PANTS = '#20302A';
+  const SHIRT = { primary: '#41A98F', fallback: '#6FA8DF', dispatcher: '#D9A05B' };
+  function drawWorker(w, t) {
+    const s = 2; // pixel scale
+    const x = Math.round(w.x), y = Math.round(w.y);
+    const st = w.plan[0];
+    const moving = st && (st.kind === 'goto' || st.kind === 'hike' || st.kind === 'climbTo');
+    const working = st && st.kind === 'render';
+    const sitting = st && st.kind === 'sit';
+    const ph = Math.floor(w.animT * (moving ? 9 : 2)) % 2;
+    ctx.save();
+    ctx.translate(x, y);
+    if (w.dir < 0) ctx.scale(-1, 1);
+    const P = (px, py, pw, phh, c) => { ctx.fillStyle = c; ctx.fillRect(px * s, py * s, pw * s, phh * s); };
+    if (sitting) {
+      P(-3, -10, 6, 4, SHIRT[w.role]); P(-3, -6, 6, 2, PANTS); P(-1, -14, 4, 4, SKIN);
+      P(-5, -6, 2, 2, PANTS); P(3, -6, 2, 2, PANTS);
+    } else {
+      // legs
+      if (moving) { P(-3, -4, 2, 4, PANTS); P(ph ? 1 : 2, -4, 2, 4, PANTS); }
+      else { P(-3, -4, 2, 4, PANTS); P(1, -4, 2, 4, PANTS); }
+      // body
+      P(-3, -11, 6, 7, SHIRT[w.role]);
+      // head
+      P(-2, -16, 5, 5, SKIN);
+      // hair
+      P(-2, -17, 5, 2, '#2A2320');
+      // arms
+      if (working) { P(3, (ph ? -12 : -10), 3, 2, SKIN); }
+      else if (w.role === 'dispatcher') { P(3, -10, 3, 2, '#E8ECE9'); P(3, -12, 3, 1, '#E8ECE9'); } // clipboard
+      else { P(3, -9, 2, 3, SKIN); }
+      // backpack when hiking
+      if (w.hiking) P(-5, -11, 2, 5, '#8A5B35');
+    }
+    ctx.restore();
+  }
+
+  /* ---------- mountain + campfire ---------- */
+  function drawCamp(t, viewTop, viewBot) {
+    if (camp.base < viewTop - 40 || camp.base - RIDGE_H > viewBot) return;
+    const W = camp.x1 - camp.x0;
+    // far ridge
+    ctx.fillStyle = '#131C17';
+    ctx.beginPath(); ctx.moveTo(camp.x0, camp.base);
+    for (const [rt, rh] of RIDGE) ctx.lineTo(camp.x0 + W * rt + 24, camp.base - rh * RIDGE_H * 0.6 - 8);
+    ctx.lineTo(camp.x1, camp.base); ctx.closePath(); ctx.fill();
+    // near ridge
+    ctx.fillStyle = '#18231D';
+    ctx.beginPath(); ctx.moveTo(camp.x0, camp.base);
+    for (const [rt, rh] of RIDGE) ctx.lineTo(camp.x0 + W * rt, camp.base - rh * RIDGE_H);
+    ctx.lineTo(camp.x1, camp.base); ctx.closePath(); ctx.fill();
+    // snow caps on the two big peaks
+    for (const pt of [0.33, 0.55, 0.74]) {
+      const px = camp.x0 + W * pt, py = ridgeY(px);
+      ctx.fillStyle = '#AFC4BA';
+      ctx.beginPath(); ctx.moveTo(px - 7, py + 6); ctx.lineTo(px, py - 1); ctx.lineTo(px + 7, py + 6); ctx.closePath(); ctx.fill();
+    }
+    // campfire
+    const fx = camp.x0 + W * campfireT, fy = ridgeY(fx) + 1;
+    ctx.fillStyle = '#5B4328'; ctx.fillRect(fx - 5, fy - 2, 10, 3);
+    const fl = ['#D9A05B', '#C9694A', '#E8C06A'];
+    for (let i = 0; i < 3; i++) {
+      const fh = 4 + Math.round(Math.sin(t / 90 + i * 2.1) * 2 + 2 + Math.random() * 2);
+      ctx.fillStyle = fl[i];
+      ctx.fillRect(fx - 3 + i * 2, fy - 2 - fh, 2, fh);
+    }
+    if (Math.random() < 0.12) smoke.push({ x: fx + (Math.random() - 0.5) * 4, y: fy - 12, vy: -14 - Math.random() * 8, life: 1.6 });
+    // base camp sign
+    ctx.fillStyle = '#51645A'; ctx.font = '600 10px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
+    ctx.fillText('BASE CAMP · 2,084 m', camp.x0 + 4, camp.base - RIDGE_H - 12);
+  }
+
+  /* ---------- click-me arrow ---------- */
+  let firstFailDone = false, arrowT = 0;
+  function drawArrow(t, viewTop, viewBot) {
+    if (firstFailDone) return;
+    const target = jobs.find(j => j.id === 'sys-pipeline' && j.state === 'done');
+    if (!target) return;
+    const tx = target.x1 - 60, ty = target.ground - target.el.offsetHeight - 6;
+    if (ty < viewTop || ty > viewBot) return;
+    arrowT += 0.016;
+    const a = Math.min(1, arrowT / 0.6);
+    const bob = Math.sin(t / 420) * 3;
+    const sx = tx + 70, sy = ty - 34 + bob;
+    ctx.strokeStyle = '#D9A05B'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.globalAlpha = a;
+    ctx.beginPath(); ctx.moveTo(sx, sy);
+    ctx.quadraticCurveTo(sx - 26, sy + 2, tx + 8, ty + bob * 0.5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(tx + 8, ty + bob * 0.5); ctx.lineTo(tx + 18, ty - 7 + bob * 0.5);
+    ctx.moveTo(tx + 8, ty + bob * 0.5); ctx.lineTo(tx + 20, ty + 5 + bob * 0.5);
+    ctx.stroke();
+    ctx.font = 'italic 600 12px "JetBrains Mono", monospace'; ctx.fillStyle = '#D9A05B'; ctx.textAlign = 'left';
+    ctx.fillText('click me', sx + 4, sy + 3);
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- inspector ---------- */
+  let selected = null, selT = 0, inspHtml = '';
+  function drawInspector() {
+    if (!selected) { inspector.hidden = true; return; }
+    const w = selected;
+    const steps = w.plan.slice(0, 4).map((p, i) => '<li' + (i === 0 ? ' class="now"' : '') + '>' + p.label + (p.remaining != null ? ' (' + Math.max(0, p.remaining).toFixed(1) + 's)' : '') + '</li>').join('');
+    const html = '<div><span class="k">' + w.id + '</span> · <span class="s">' + w.role + '</span></div>'
+      + '<div>goal: ' + w.goal + '</div>'
+      + (w.job ? '<div>job: {site: "' + w.job.id + '", cost: ' + w.job.cost + 'cr' + (w.job.batch ? ', batch: true' : '') + '}</div>' : '')
+      + '<ol>' + (steps || '<li>plan complete</li>') + '</ol>';
+    if (html !== inspHtml) { inspHtml = html; inspector.innerHTML = html; }
+    inspector.hidden = false;
+    const ix = Math.max(8, Math.min(w.x - scrollX + 16, innerWidth - 260));
+    let iy = w.y - scrollY - 46 - inspector.offsetHeight;
+    if (iy < 8) iy = w.y - scrollY + 16;
+    inspector.style.transform = 'translate(' + ix + 'px, ' + iy + 'px)';
+  }
+
+  /* ---------- clicks ---------- */
+  document.addEventListener('click', (e) => {
+    const el = e.target;
+    if (el.closest && el.closest('a')) return;
+    const card = el.closest ? el.closest('[data-job].done') : null;
+    if (card) {
+      const j = jobs.find(x => x.el === card);
+      if (j && j.state === 'done' && !j.glyph) { fail(j); return; }
+      if (j && j.glyph && j.state === 'done') { fail(j); return; }
+    }
+    let best = null, bd = touch ? 44 : 32;
+    for (const w of workers) {
+      const d = Math.hypot(w.x - (e.pageX), w.y - 16 - e.pageY);
+      if (d < bd) { bd = d; best = w; }
+    }
+    if (best !== selected) selT = 0;
+    selected = best;
+    if (!best) inspector.hidden = true;
+  });
+
+  /* ---------- boot ---------- */
+  function resize() {
+    let dpr = Math.min(devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(innerWidth * dpr);
+    canvas.height = Math.floor(innerHeight * dpr);
+    canvas._dpr = dpr;
+    ctx.imageSmoothingEnabled = false;
+  }
+  resize();
+  measure();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => measure());
+  let rto; addEventListener('resize', () => { clearTimeout(rto); rto = setTimeout(() => { resize(); measure(); }, 120); });
+
+  const io = new IntersectionObserver((entries) => {
+    for (const en of entries) {
+      const j = jobs.find(x => x.el === en.target);
+      if (j && j.state === 'pending' && en.isIntersecting) { enqueue(j); io.unobserve(en.target); }
+    }
+  }, { rootMargin: '30% 0px 55% 0px' });
+  for (const j of jobs) io.observe(j.el);
+
+  // never hold content hostage
+  setTimeout(() => {
+    for (const j of jobs) if (j.state !== 'done') { j.state = 'done'; j.el.classList.add('done'); j.el.classList.remove('rendering'); }
+  }, 14000);
+
+  // dispatcher takes the desk; crew reports in
+  for (const w of workers) w.role === 'dispatcher' ? deskPlan(w) : idle(w);
+
+  window.__pipeline = { workers, jobs, queue, get credits() { return credits; } };
+
+  /* ---------- main loop ---------- */
+  let last = performance.now(), visible = true;
+  document.addEventListener('visibilitychange', () => {
+    visible = document.visibilityState === 'visible';
+    last = performance.now();
+    if (visible) requestAnimationFrame(frame);
+  });
+
+  function frame(t) {
+    if (!visible) return;
+    const dt = Math.min(0.05, (t - last) / 1000);
+    last = t;
+
+    pump();
+    for (const w of workers) { w.animT += dt; step(w, dt); }
+
+    const dpr = canvas._dpr || 1;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, -scrollY * dpr);
+    ctx.clearRect(0, scrollY, innerWidth, innerHeight);
+    const viewTop = scrollY - 60, viewBot = scrollY + innerHeight + 60;
+
+    drawCamp(t, viewTop, viewBot);
+
+    // rendering markers under in-progress jobs
+    for (const w of workers) {
+      if (!w.job) continue;
+      const st = w.plan[0];
+      if (st && st.kind === 'render' && w.job.ground > viewTop && w.job.ground < viewBot) {
+        const frac = 1 - st.remaining / w.job.effort;
+        ctx.fillStyle = '#233029'; ctx.fillRect(w.x - 16, w.y + 5, 32, 3);
+        ctx.fillStyle = w.role === 'fallback' ? '#6FA8DF' : '#41A98F';
+        ctx.fillRect(w.x - 16, w.y + 5, Math.round(32 * frac), 3);
+      }
+    }
+
+    // particles
+    for (let i = dust.length - 1; i >= 0; i--) {
+      const p = dust[i]; p.life -= dt;
+      if (p.life <= 0) { dust.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 70 * dt;
+      if (p.y < viewTop || p.y > viewBot) continue;
+      ctx.globalAlpha = Math.min(1, p.life * 2);
+      ctx.fillStyle = p.red ? '#D97462' : '#41A98F';
+      ctx.fillRect(Math.round(p.x), Math.round(p.y), 3, 3);
+    }
+    ctx.globalAlpha = 1;
+    for (let i = coins.length - 1; i >= 0; i--) {
+      const c = coins[i]; c.life -= dt; c.y += c.vy * dt;
+      if (c.life <= 0) { coins.splice(i, 1); continue; }
+      if (c.y < viewTop || c.y > viewBot) continue;
+      ctx.globalAlpha = Math.min(1, c.life * 1.6);
+      ctx.fillStyle = '#D9A05B';
+      ctx.font = '700 11px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+      ctx.fillText('+' + c.amt + 'cr', c.x, c.y);
+    }
+    ctx.globalAlpha = 1;
+    for (let i = smoke.length - 1; i >= 0; i--) {
+      const s = smoke[i]; s.life -= dt; s.y += s.vy * dt;
+      if (s.life <= 0) { smoke.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.min(0.5, s.life * 0.4);
+      ctx.fillStyle = '#8CA096';
+      ctx.fillRect(Math.round(s.x), Math.round(s.y), 3, 3);
+    }
+    ctx.globalAlpha = 1;
+
+    for (const w of workers) {
+      if (w.y < viewTop || w.y > viewBot) continue;
+      drawWorker(w, t);
+    }
+
+    // selection box
+    if (selected) {
+      selT = Math.min(1, selT + dt * 5);
+      const w = selected;
+      if (w.y > viewTop && w.y < viewBot) {
+        const m = Math.round(3 + 8 * (1 - selT));
+        ctx.strokeStyle = '#D9A05B'; ctx.lineWidth = 1.5;
+        ctx.strokeRect(w.x - 10 - m, w.y - 36 - m, 20 + m * 2, 40 + m * 2);
+      }
+      drawInspector();
+    }
+
+    drawArrow(t, viewTop, viewBot);
+    hudTick();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
