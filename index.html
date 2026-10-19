@@ -132,7 +132,7 @@
   }
   footer p { margin: 0 0 4px; }
 
-  #basecamp { height: 230px; margin-top: 10px; }
+  #basecamp { height: 250px; margin-top: 10px; }
 
   #sim { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 5; }
 
@@ -344,7 +344,7 @@
   </div>
 
   <footer>
-    <p>backend by day, mountains on weekends — the crew below is off-shift.</p>
+    <p>backend by day, mountains on weekends — the crew below is off-shift in the village.</p>
     <p>curious? click a worker. terminally curious? <span style="color:var(--dim)">window.__pipeline</span> in the console.</p>
   </footer>
 
@@ -390,28 +390,49 @@
     const bc = document.getElementById('basecamp').getBoundingClientRect();
     camp.x0 = bc.left + scrollX + 6; camp.x1 = bc.right + scrollX - 6;
     camp.base = bc.bottom + scrollY - 10; camp.top = bc.top + scrollY;
+    buildVillage();
   }
   const vw = () => document.documentElement.clientWidth;
 
-  /* ---------- the ridge ---------- */
-  const RIDGE = [[0,.08],[.1,.4],[.2,.24],[.33,.7],[.44,.44],[.55,.97],[.63,.6],[.74,.76],[.86,.32],[1,.1]];
-  const RIDGE_H = 150;
-  function ridgeY(x) {
-    const t = Math.max(0, Math.min(1, (x - camp.x0) / Math.max(1, camp.x1 - camp.x0)));
-    for (let i = 1; i < RIDGE.length; i++) {
-      if (t <= RIDGE[i][0]) {
-        const [t0, h0] = RIDGE[i - 1], [t1, h1] = RIDGE[i];
-        const f = (t - t0) / (t1 - t0);
-        return camp.base - (h0 + (h1 - h0) * f) * RIDGE_H;
-      }
-    }
-    return camp.base;
-  }
-  const seatTs = [0.5, 0.53, 0.6, 0.62, 0.33, 0.74, 0.45];
-  const campfireT = 0.565;
-  const treeTs = [0.06, 0.13, 0.17, 0.27, 0.4, 0.47, 0.68, 0.71, 0.8, 0.9];
+  /* ---------- the worker village (cutaway cabins + backdrop peak) ---------- */
+  const FAR_RIDGE = [[0,.12],[.14,.3],[.3,.18],[.48,.34],[.62,.22],[.78,.38],[.9,.2],[1,.1]];
+  const PEAK = [[0.72,0],[0.8,.95],[0.85,.7],[0.9,1],[1,0.08]];
   const stars = [];
-  for (let i = 0; i < 46; i++) stars.push([Math.random(), Math.random() * 0.55, Math.random() * 7]);
+  for (let i = 0; i < 46; i++) stars.push([Math.random(), Math.random() * 0.5, Math.random() * 7]);
+  const vill = { cabins: [], slots: [], fire: { x: 0, y: 0 } };
+  const CABIN_H = 86, ROOF_H = 24;
+  function buildVillage() {
+    const W = camp.x1 - camp.x0;
+    const n = W >= 640 ? 3 : 2;
+    const cw = Math.min(190, Math.max(150, W * 0.2));
+    const types = ['bunk', 'kitchen', 'lounge'].slice(0, n);
+    vill.cabins = [];
+    vill.slots = [];
+    let x = camp.x0 + 12;
+    for (const type of types) {
+      const c = { type, x, w: cw, y: camp.base };
+      vill.cabins.push(c);
+      const g = camp.base;
+      if (type === 'bunk') {
+        vill.slots.push({ kind: 'sleep', x: x + cw * 0.28, y: g, busyBy: null });
+        vill.slots.push({ kind: 'sleep', x: x + cw * 0.72, y: g, busyBy: null });
+      } else if (type === 'kitchen') {
+        vill.slots.push({ kind: 'eat', x: x + cw * 0.3, y: g, busyBy: null, dir: 1 });
+        vill.slots.push({ kind: 'eat', x: x + cw * 0.62, y: g, busyBy: null, dir: -1 });
+        vill.slots.push({ kind: 'coffee', x: x + cw * 0.86, y: g, busyBy: null, dir: 1 });
+      } else {
+        vill.slots.push({ kind: 'tv', x: x + cw * 0.56, y: g, busyBy: null, dir: -1 });
+        vill.slots.push({ kind: 'tv', x: x + cw * 0.74, y: g, busyBy: null, dir: -1 });
+      }
+      x += cw + 16;
+    }
+    vill.fire.x = Math.min(x + 34, camp.x0 + W * 0.74);
+    vill.fire.y = camp.base;
+    for (let i = 0; i < 3; i++) vill.slots.push({ kind: 'fire', x: vill.fire.x - 22 + i * 22, y: camp.base, busyBy: null, dir: i < 1 ? 1 : -1 });
+  }
+  function releaseSlot(w) {
+    for (const sl of vill.slots) if (sl.busyBy === w) sl.busyBy = null;
+  }
 
   /* ---------- workers ---------- */
   const N = innerWidth < 768 ? 9 : 16;
@@ -459,6 +480,7 @@
     return steps;
   }
   function assign(w, j) {
+    releaseSlot(w);
     w.busy = true; w.hiking = false; w.job = j;
     j.state = 'rendering'; j.tMark = performance.now();
     j.el.classList.add('rendering');
@@ -502,11 +524,14 @@
     if (w.role === 'dispatcher') { deskPlan(w); return; }
     w.busy = false; w.tools = false;
     if (queue.length) return;
-    if (Math.random() < 0.6) {
-      w.hiking = true; w.goal = 'off shift → basecamp';
-      const t = seatTs[Math.floor(Math.random() * seatTs.length)] + (Math.random() - 0.5) * 0.02;
-      const sx = camp.x0 + (camp.x1 - camp.x0) * t;
-      w.plan = [...pathTo(w, camp.x0 + 20, camp.base), { kind: 'hike', x: sx, label: 'hike the ridge' }, { kind: 'sit', remaining: 7 + Math.random() * 15, label: 'campfire' }];
+    const free = vill.slots.filter(sl => !sl.busyBy);
+    if (free.length && Math.random() < 0.72) {
+      const sl = free[Math.floor(Math.random() * free.length)];
+      sl.busyBy = w;
+      w.hiking = true;
+      const label = { sleep: 'sleep', eat: 'eat dinner', tv: 'watch tv', coffee: 'sip coffee', fire: 'campfire' }[sl.kind];
+      w.goal = 'off shift → ' + label;
+      w.plan = [...pathTo(w, sl.x, sl.y), { kind: 'live', what: sl.kind, slot: sl, remaining: 9 + Math.random() * 14, label }];
     } else {
       w.goal = Math.random() < 0.5 ? 'loiter' : 'patrol';
       const dx = (Math.random() < 0.5 ? -1 : 1) * (50 + Math.random() * 240);
@@ -582,12 +607,12 @@
         w.x += w.dir * Math.min(Math.abs(dx), w.speed * dt);
         break;
       }
-      case 'hike': {
-        const dx = s.x - w.x;
-        if (Math.abs(dx) <= 3) { w.plan.shift(); break; }
-        w.dir = dx > 0 ? 1 : -1;
-        w.x += w.dir * Math.min(Math.abs(dx), w.speed * 0.55 * dt);
-        w.y = ridgeY(w.x);
+      case 'live': {
+        s.remaining -= dt;
+        if (s.slot && s.slot.dir) w.dir = s.slot.dir;
+        if (s.what === 'sleep' && Math.random() < dt * 0.8) zzz.push({ x: w.x + 10, y: w.y - 34, vy: -11, life: 1.7 });
+        if (s.what === 'coffee' && Math.random() < dt * 1.5) smoke.push({ x: w.x + w.dir * 8, y: w.y - 38, vy: -9, life: 0.9 });
+        if (queue.length || s.remaining <= 0) { releaseSlot(w); w.plan = []; }
         break;
       }
       case 'inspect': case 'readlogs': {
@@ -606,9 +631,8 @@
         if (s.remaining <= 0) { w.plan.shift(); complete(w); }
         break;
       }
-      case 'sit': case 'pause': {
+      case 'pause': {
         s.remaining -= dt;
-        if (queue.length && s.kind === 'sit') { w.plan = []; break; }
         if (s.remaining <= 0) w.plan.shift();
         break;
       }
@@ -741,7 +765,7 @@
     const ph = Math.floor(w.animT * 8) % 2;
     const wk = Math.floor(w.animT * 6) % 2;
     if (st) {
-      if (st.kind === 'sit') return 'SIT';
+      if (st.kind === 'live') return st.what === 'coffee' ? 'IDLE' : 'SIT';
       if (st.kind === 'render') return wk ? 'WORK_A' : 'WORK_B';
       if (st.kind === 'inspect') return 'INSPECT';
       if (st.kind === 'readlogs') return 'READ';
@@ -753,6 +777,19 @@
   }
   function drawWorker(w) {
     const variant = w.hiking ? 'hiker' : w.role;
+    const st0 = w.plan[0];
+    if (st0 && st0.kind === 'live' && st0.what === 'sleep') {
+      const spr0 = SPRITES[variant + '|IDLE|' + w.facial];
+      if (!spr0) return;
+      ctx.save();
+      ctx.translate(Math.round(w.x), Math.round(w.y) - 12);
+      ctx.rotate(-Math.PI / 2);
+      ctx.drawImage(spr0, 0, 0, 16, 24, -10, -24, 32, 48);
+      ctx.restore();
+      ctx.fillStyle = '#7FA7D4'; ctx.fillRect(Math.round(w.x) - 14, Math.round(w.y) - 16, 26, 10);
+      ctx.fillStyle = '#5C83AE'; ctx.fillRect(Math.round(w.x) - 14, Math.round(w.y) - 16, 26, 2);
+      return;
+    }
     const spr = SPRITES[variant + '|' + poseFor(w) + '|' + w.facial];
     if (!spr) return;
     const x = Math.round(w.x), y = Math.round(w.y);
@@ -764,106 +801,128 @@
     ctx.drawImage(spr, 0, 0, 16, 24, -16, -47, 32, 48);
     ctx.restore();
     const st = w.plan[0];
+    if (st && st.kind === 'live' && st.what === 'coffee') {
+      ctx.fillStyle = '#8A5B35'; ctx.fillRect(x + w.dir * 10 - 3, y - 32, 6, 5);
+      ctx.fillStyle = '#ECEEF2'; ctx.fillRect(x + w.dir * 10 + (w.dir > 0 ? 3 : -4), y - 31, 1, 3);
+    }
     if (st && st.kind === 'inspect') {
       ctx.fillStyle = '#E2A356'; ctx.font = '700 13px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
       ctx.fillText('?', w.x + w.dir * 10, w.y - 52 + Math.sin(w.animT * 5) * 2);
     }
   }
 
-  /* ---------- mountain, camp, sky ---------- */
-  function drawCamp(t, viewTop, viewBot) {
+  /* ---------- the village: sky, backdrop peak, cutaway cabins, fire ---------- */
+  const zzz = [];
+  function px2(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
+  function drawVillage(t, viewTop, viewBot) {
     if (camp.top > viewBot || camp.base < viewTop) return;
     const W = camp.x1 - camp.x0;
     // moon + stars
-    ctx.fillStyle = '#D7DAE0';
-    const mx = camp.x1 - 70, my = camp.top + 26;
-    ctx.beginPath(); ctx.arc(mx, my, 9, 0, 7); ctx.fill();
-    ctx.fillStyle = '#9BA0AB'; ctx.fillRect(mx - 3, my - 2, 3, 3); ctx.fillRect(mx + 2, my + 3, 2, 2);
+    px2(camp.x1 - 70, camp.top + 18, 18, 18, '#D7DAE0');
+    px2(camp.x1 - 73, camp.top + 22, 5, 5, '#9BA0AB'); px2(camp.x1 - 62, camp.top + 28, 4, 4, '#9BA0AB');
     for (let i = 0; i < stars.length; i++) {
       const [sx, sy, sp] = stars[i];
       ctx.globalAlpha = 0.25 + 0.55 * Math.abs(Math.sin(t / 900 + sp));
-      ctx.fillStyle = '#D7DAE0';
-      ctx.fillRect(camp.x0 + sx * W, camp.top + 8 + sy * (RIDGE_H * 0.7), 2, 2);
+      px2(camp.x0 + sx * W, camp.top + 6 + sy * 90, 2, 2, '#D7DAE0');
     }
     ctx.globalAlpha = 1;
-    // far ridge
+    // far ridge across the back
     ctx.fillStyle = '#15171B';
     ctx.beginPath(); ctx.moveTo(camp.x0, camp.base);
-    for (const [rt, rh] of RIDGE) ctx.lineTo(camp.x0 + W * rt + 30, camp.base - rh * RIDGE_H * 0.55 - 10);
+    for (const [rt, rh] of FAR_RIDGE) ctx.lineTo(camp.x0 + W * rt, camp.base - 36 - rh * 70);
     ctx.lineTo(camp.x1, camp.base); ctx.closePath(); ctx.fill();
-    // near ridge + rim light
+    // the one real peak, behind the fire, with snow + flag
     ctx.fillStyle = '#1C1F25';
-    ctx.beginPath(); ctx.moveTo(camp.x0, camp.base);
-    for (const [rt, rh] of RIDGE) ctx.lineTo(camp.x0 + W * rt, camp.base - rh * RIDGE_H);
+    ctx.beginPath(); ctx.moveTo(camp.x0 + W * PEAK[0][0], camp.base);
+    for (const [rt, rh] of PEAK) ctx.lineTo(camp.x0 + W * rt, camp.base - rh * 128);
     ctx.lineTo(camp.x1, camp.base); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#343943'; ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let i = 0; i < RIDGE.length; i++) {
-      const [rt, rh] = RIDGE[i];
-      const px = camp.x0 + W * rt, py = camp.base - rh * RIDGE_H;
-      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    const pkx = camp.x0 + W * 0.9, pky = camp.base - 128;
+    px2(pkx - 2, pky - 1, 4, 2, '#E8EAEE'); px2(pkx - 5, pky + 1, 10, 2, '#E8EAEE'); px2(pkx - 8, pky + 3, 16, 2, '#AEB4C0');
+    px2(pkx + 2, pky - 14, 1, 13, '#9BA0AB'); px2(pkx + 3, pky - 14, 6, 4, '#C5584A');
+    // pines between fire and peak
+    for (const fx of [0.69, 0.8, 0.96]) {
+      const txp = camp.x0 + W * fx, typ = camp.base;
+      px2(txp - 1, typ - 5, 2, 5, '#17191D');
+      px2(txp - 4, typ - 9, 8, 4, '#20262C'); px2(txp - 3, typ - 12, 6, 3, '#20262C'); px2(txp - 1, typ - 14, 2, 2, '#20262C');
     }
-    ctx.stroke();
-    // stepped snow caps
-    for (const pt of [0.33, 0.55, 0.74]) {
-      const px = camp.x0 + W * pt, py = ridgeY(px);
-      ctx.fillStyle = '#E8EAEE';
-      ctx.fillRect(px - 2, py - 1, 4, 2);
-      ctx.fillRect(px - 5, py + 1, 10, 2);
-      ctx.fillStyle = '#AEB4C0';
-      ctx.fillRect(px - 8, py + 3, 16, 2);
+    // cabins (dollhouse cutaway: open front, warm inside)
+    for (const c of vill.cabins) {
+      const cx = c.x, cw = c.w, gy = camp.base, ty = gy - CABIN_H;
+      // interior + glow
+      px2(cx, ty, cw, CABIN_H, '#1B1E24');
+      const gl = ctx.createRadialGradient(cx + cw / 2, ty + 34, 6, cx + cw / 2, ty + 34, cw * 0.62);
+      gl.addColorStop(0, 'rgba(226,163,86,0.16)'); gl.addColorStop(1, 'rgba(226,163,86,0)');
+      ctx.fillStyle = gl; ctx.fillRect(cx, ty, cw, CABIN_H);
+      // back-wall window with light
+      px2(cx + cw - 34, ty + 14, 18, 14, '#2A2F37'); px2(cx + cw - 32, ty + 16, 14, 10, '#E2A35633');
+      px2(cx + cw - 25, ty + 16, 2, 10, '#2A2F37'); px2(cx + cw - 32, ty + 20, 14, 2, '#2A2F37');
+      // walls + floor
+      px2(cx - 3, ty, 3, CABIN_H, '#262B31'); px2(cx + cw, ty, 3, CABIN_H, '#262B31');
+      px2(cx - 3, gy - 3, cw + 6, 3, '#262B31');
+      px2(cx, gy - 5, cw, 2, '#30363D');
+      // roof
+      ctx.fillStyle = '#30363D';
+      ctx.beginPath(); ctx.moveTo(cx - 10, ty); ctx.lineTo(cx + cw / 2, ty - ROOF_H); ctx.lineTo(cx + cw + 10, ty); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#3A4149';
+      ctx.beginPath(); ctx.moveTo(cx - 10, ty); ctx.lineTo(cx + cw / 2, ty - ROOF_H); ctx.lineTo(cx + cw / 2 + 10, ty - ROOF_H + 7); ctx.lineTo(cx, ty); ctx.closePath(); ctx.fill();
+      px2(cx + cw / 2 - 2, ty - ROOF_H - 1, cw * 0 + 4 + cw / 2 + 12 > 0 ? 4 : 4, 3, '#262B31');
+      // chimney on the first cabin
+      if (c === vill.cabins[0]) {
+        px2(cx + cw - 26, ty - ROOF_H + 2, 8, 14, '#262B31'); px2(cx + cw - 25, ty - ROOF_H + 1, 6, 2, '#30363D');
+        if (Math.random() < 0.08) smoke.push({ x: cx + cw - 22, y: ty - ROOF_H - 2, vy: -11, life: 2 });
+      }
+      // furniture
+      if (c.type === 'bunk') {
+        for (const bx of [cx + cw * 0.28, cx + cw * 0.72]) {
+          px2(bx - 17, gy - 14, 34, 11, '#4A3620');          // frame
+          px2(bx - 15, gy - 17, 30, 5, '#C3C8D2');           // mattress
+          px2(bx - 15, gy - 18, 8, 4, '#ECEEF2');            // pillow
+          px2(bx - 17, gy - 4, 3, 4, '#33261A'); px2(bx + 14, gy - 4, 3, 4, '#33261A');
+        }
+        px2(cx + cw * 0.5 - 10, gy - 4, 20, 2, '#5B4328');   // rug
+        px2(cx + 8, gy - 30, 3, 26, '#4A3620'); px2(cx + 4, gy - 36, 11, 7, '#E2A356'); // lamp
+      } else if (c.type === 'kitchen') {
+        px2(cx + cw * 0.46 - 16, gy - 20, 32, 4, '#5B4328'); // table top
+        px2(cx + cw * 0.46 - 13, gy - 16, 3, 14, '#4A3620'); px2(cx + cw * 0.46 + 10, gy - 16, 3, 14, '#4A3620');
+        px2(cx + cw * 0.46 - 7, gy - 24, 6, 3, '#C97F1E');   // bowl
+        px2(cx + cw * 0.46 + 2, gy - 23, 5, 2, '#ECEEF2');   // plate
+        px2(cx + cw * 0.78, gy - 34, 16, 32, '#C3C8D2');     // fridge
+        px2(cx + cw * 0.78 + 2, gy - 30, 12, 1, '#7E8490'); px2(cx + cw * 0.78 + 11, gy - 26, 2, 4, '#7E8490');
+        px2(cx + cw * 0.86 - 8, gy - 22, 20, 4, '#30363D');  // counter
+        px2(cx + cw * 0.86 - 8, gy - 18, 20, 16, '#262B31');
+        px2(cx + cw * 0.86 + 2, gy - 30, 9, 8, '#15161A');   // coffee machine
+        px2(cx + cw * 0.86 + 4, gy - 27, 3, 3, '#C5584A');
+      } else {
+        px2(cx + cw * 0.62 - 4, gy - 16, 34, 7, '#8A5230');  // couch seat
+        px2(cx + cw * 0.62 - 4, gy - 26, 34, 10, '#A3663C'); // couch back
+        px2(cx + cw * 0.62 - 8, gy - 22, 5, 13, '#8A5230'); px2(cx + cw * 0.62 + 29, gy - 22, 5, 13, '#8A5230');
+        px2(cx + cw * 0.2 - 2, gy - 12, 24, 3, '#4A3620');   // tv stand
+        px2(cx + cw * 0.2, gy - 30, 20, 18, '#15161A');      // tv
+        const sc = Math.floor(t / 150);
+        const cols = ['#7FA7D4', '#E2A356', '#D7DAE0', '#30363D', '#C5584A'];
+        for (let i = 0; i < 6; i++) px2(cx + cw * 0.2 + 2 + (i % 3) * 5, gy - 28 + Math.floor(i / 3) * 7, 4, 6, cols[(sc + i * 2) % cols.length]);
+        px2(cx + cw * 0.92, gy - 18, 4, 14, '#20662C' === '' ? '' : '#2E4A33'); // plant
+        px2(cx + cw * 0.92 - 3, gy - 24, 10, 8, '#365A3E');
+        px2(cx + cw * 0.92 - 1, gy - 5, 6, 5, '#C97F1E');
+      }
+      // name plate
+      ctx.fillStyle = '#555B66'; ctx.font = '600 9px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+      ctx.fillText({ bunk: 'BUNKHOUSE', kitchen: 'KITCHEN', lounge: 'LOUNGE' }[c.type], cx + cw / 2, ty - ROOF_H - 6);
     }
-    // summit flag
-    const fx0 = camp.x0 + W * 0.55, fy0 = ridgeY(fx0);
-    ctx.fillStyle = '#9BA0AB'; ctx.fillRect(fx0 + 3, fy0 - 14, 1, 13);
-    ctx.fillStyle = '#C5584A'; ctx.fillRect(fx0 + 4, fy0 - 14, 6, 4);
-    // pines on the lower slopes
-    for (const tt of treeTs) {
-      const px = camp.x0 + W * tt, py = ridgeY(px);
-      if (camp.base - py > RIDGE_H * 0.55) continue;
-      ctx.fillStyle = '#20262C';
-      ctx.fillRect(px - 1, py - 4, 2, 4);
-      ctx.fillRect(px - 3, py - 7, 6, 3);
-      ctx.fillRect(px - 2, py - 10, 4, 3);
-      ctx.fillRect(px - 1, py - 12, 2, 2);
-      ctx.fillStyle = '#17191D'; ctx.fillRect(px, py - 1, 1, 2);
-    }
-    // dotted trail from the base to the campfire
-    ctx.fillStyle = '#3A3F49';
-    for (let i = 0; i <= 16; i++) {
-      const px = camp.x0 + 20 + ((camp.x0 + W * campfireT) - (camp.x0 + 20)) * (i / 16);
-      if (i % 2 === 0) ctx.fillRect(Math.round(px), Math.round(ridgeY(px)) + 1, 2, 2);
-    }
-    // tents
-    const tents = [[0.528, '#E2A356', '#B47C3C'], [0.6, '#7FA7D4', '#5C83AE']];
-    for (const [tt, c1, c2] of tents) {
-      const px = camp.x0 + W * tt, py = ridgeY(px);
-      ctx.fillStyle = c2;
-      ctx.beginPath(); ctx.moveTo(px - 10, py); ctx.lineTo(px, py - 11); ctx.lineTo(px + 10, py); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = c1;
-      ctx.beginPath(); ctx.moveTo(px - 10, py); ctx.lineTo(px, py - 11); ctx.lineTo(px + 3, py); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#101114';
-      ctx.beginPath(); ctx.moveTo(px - 4, py); ctx.lineTo(px, py - 5); ctx.lineTo(px + 1, py); ctx.closePath(); ctx.fill();
-    }
-    // campfire: glow, stone ring, logs, layered flame
-    const fx = camp.x0 + W * campfireT, fy = ridgeY(fx) + 1;
+    // campfire
+    const fx = vill.fire.x, fy = vill.fire.y - 1;
     const glow = ctx.createRadialGradient(fx, fy - 4, 2, fx, fy - 4, 34);
     glow.addColorStop(0, 'rgba(226,163,86,0.22)'); glow.addColorStop(1, 'rgba(226,163,86,0)');
     ctx.fillStyle = glow; ctx.fillRect(fx - 36, fy - 40, 72, 48);
-    ctx.fillStyle = '#555B66';
-    ctx.fillRect(fx - 8, fy - 1, 3, 2); ctx.fillRect(fx + 5, fy - 1, 3, 2); ctx.fillRect(fx - 2, fy + 1, 4, 2);
-    ctx.fillStyle = '#5B4328'; ctx.fillRect(fx - 6, fy - 3, 12, 2);
-    ctx.fillStyle = '#4A3620'; ctx.fillRect(fx - 4, fy - 5, 8, 2);
+    px2(fx - 8, fy - 1, 3, 2, '#555B66'); px2(fx + 5, fy - 1, 3, 2, '#555B66'); px2(fx - 2, fy + 1, 4, 2, '#555B66');
+    px2(fx - 6, fy - 3, 12, 2, '#5B4328'); px2(fx - 4, fy - 5, 8, 2, '#4A3620');
     const fl = Math.floor(t / 120) % 2;
-    ctx.fillStyle = '#C5584A'; ctx.fillRect(fx - 4, fy - 9 - fl, 8, 5);
-    ctx.fillStyle = '#E2A356'; ctx.fillRect(fx - 3, fy - 12 + fl, 6, 6);
-    ctx.fillStyle = '#F2D08A'; ctx.fillRect(fx - 1, fy - 13 + fl, 3, 4);
-    ctx.fillStyle = '#FBF0D0'; ctx.fillRect(fx, fy - 10, 1, 2);
+    px2(fx - 4, fy - 9 - fl, 8, 5, '#C5584A'); px2(fx - 3, fy - 12 + fl, 6, 6, '#E2A356'); px2(fx - 1, fy - 13 + fl, 3, 4, '#F2D08A');
     if (Math.random() < 0.3) embers.push({ x: fx + (Math.random() - 0.5) * 6, y: fy - 12, vx: (Math.random() - 0.5) * 10, vy: -16 - Math.random() * 18, life: 0.7 + Math.random() * 0.5 });
     if (Math.random() < 0.1) smoke.push({ x: fx + (Math.random() - 0.5) * 4, y: fy - 16, vy: -13 - Math.random() * 7, life: 1.8 });
     // sign
     ctx.fillStyle = '#555B66'; ctx.font = '600 10px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
-    ctx.fillText('BASE CAMP · 2,084 m', camp.x0 + 4, camp.base - RIDGE_H - 22);
+    ctx.fillText('WORKER VILLAGE · 2,084 m', camp.x0 + 4, camp.top + 14);
   }
 
   /* ---------- click-me arrow ---------- */
@@ -962,7 +1021,7 @@
   }, 5000);
 
   for (const w of workers) w.role === 'dispatcher' ? deskPlan(w) : idle(w);
-  window.__pipeline = { workers, jobs, queue, camp, version: 5, get credits() { return credits; } };
+  window.__pipeline = { workers, jobs, queue, camp, version: 6, get credits() { return credits; } };
 
   /* ---------- main loop ---------- */
   let last = performance.now(), visible = true;
@@ -985,7 +1044,7 @@
     ctx.clearRect(0, scrollY, innerWidth, innerHeight);
     const viewTop = scrollY - 60, viewBot = scrollY + innerHeight + 60;
 
-    drawCamp(t, viewTop, viewBot);
+    drawVillage(t, viewTop, viewBot);
 
     // red marker over failed sites awaiting repair
     for (const j of jobs) {
@@ -1051,6 +1110,14 @@
       ctx.fillStyle = '#E2A356';
       ctx.font = '700 11px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
       ctx.fillText('+' + c.amt + 'cr', c.x, c.y);
+    }
+    ctx.globalAlpha = 1;
+    for (let i = zzz.length - 1; i >= 0; i--) {
+      const z = zzz[i]; z.life -= dt; z.y += z.vy * dt;
+      if (z.life <= 0) { zzz.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.min(1, z.life);
+      ctx.fillStyle = '#9BA0AB'; ctx.font = '700 10px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+      ctx.fillText('z', z.x, z.y);
     }
     ctx.globalAlpha = 1;
 
